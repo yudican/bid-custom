@@ -1,0 +1,1 @@
+const e=(a,t=5)=>axios.post("/api/general/search-contact",{search:a,limit:t}).then(s=>s.data.data),r=(a,t=5)=>axios.post("/api/general/search-sales",{search:a,limit:t}).then(s=>s.data.data);export{r as a,e as s};

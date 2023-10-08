@@ -1,0 +1,1 @@
+<span class="bg-yellow-100"><?php echo e($slot); ?></span><?php /**PATH /Applications/MAMP/htdocs/aimi-crm-momsy/server/resources/views/livewire/datatables/highlight.blade.php ENDPATH**/ ?>
