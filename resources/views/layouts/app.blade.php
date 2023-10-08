@@ -35,10 +35,11 @@
     <link rel="stylesheet" href="{{asset('assets/css/bootstrap.min.css')}}">
     <link rel="stylesheet" href="{{asset('assets/css/atlantis.css')}}">
     <link rel="stylesheet" href="{{asset('assets/css/style.css')}}">
+    <link rel="stylesheet" href="{{asset('assets/css/style.css')}}">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <!-- Styles -->
-    @viteReactRefresh
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- @viteReactRefresh
+    @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
     @stack('styles')
     @livewireStyles
     <style>
@@ -266,12 +267,12 @@
                         <div class="info">
                             <a href="{{ url('/profile') }}">
                                 <span>
-                                    {{Auth::user()->name}}   
+                                    {{Auth::user()->name}}
                                     <span class="user-level">{{Auth::user()->role->role_name}}
-                                    <span class="navbar-toggler-icon">
-                                        <i class="icon-settings"></i>
+                                        <span class="navbar-toggler-icon">
+                                            <i class="icon-settings"></i>
+                                        </span>
                                     </span>
-                                </span>
                             </a>
                         </div>
                     </div>
