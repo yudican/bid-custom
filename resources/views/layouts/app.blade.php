@@ -36,6 +36,8 @@
     <link rel="stylesheet" href="{{asset('assets/css/atlantis.css')}}">
     <link rel="stylesheet" href="{{asset('assets/css/style.css')}}">
     <link rel="stylesheet" href="{{asset('assets/css/style.css')}}">
+    <link rel="stylesheet" href="{{asset('resources/css/app.css')}}">
+    <script src="{{asset('resources/js/app.js')}}"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <!-- Styles -->
     {{-- @viteReactRefresh
