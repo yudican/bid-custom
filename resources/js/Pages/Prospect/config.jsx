@@ -155,13 +155,13 @@ const ActionMenu = ({ value, status = 1 }) => {
       onClick={({ key }) => {
         switch (key) {
           case "detail":
-            navigate(`prospect/detail/${value}`)
+            navigate(`/prospect/detail/${value}`)
             break
           case "detail_new_tab":
-            window.open(`prospect/detail/${value}`)
+            window.open(`/prospect/detail/${value}`)
             break
           case "update":
-            navigate(`prospect/form/${value}`)
+            navigate(`/prospect/form/${value}`)
             break
           case "cancel":
             return axios.get(`/api/prospect/cancel/${value}`).then((res) => {
@@ -231,7 +231,7 @@ const prospectListColumn = [
           left: -16,
         }}
         // icon={<MoreOutlined />}
-        overlay={<ActionMenu value={text.id} status={text.status} />}
+        overlay={<ActionMenu value={text.uuid} status={text.status} />}
       ></Dropdown.Button>
     ),
   },

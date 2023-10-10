@@ -1,15 +1,4 @@
-import { LoadingOutlined, PlusOutlined } from "@ant-design/icons"
-import {
-  Card,
-  DatePicker,
-  Form,
-  Input,
-  Modal,
-  Select,
-  Table,
-  Upload,
-} from "antd"
-import TextArea from "antd/lib/input/TextArea"
+import { Card, Form, Input, Table } from "antd"
 import axios from "axios"
 import moment from "moment"
 import React, { useEffect, useState } from "react"
@@ -18,7 +7,7 @@ import { toast } from "react-toastify"
 import LoadingFallback from "../../components/LoadingFallback"
 import DebounceSelect from "../../components/atoms/DebounceSelect"
 import Layout from "../../components/layout"
-import { getItem } from "../../helpers"
+import { formatDate, getItem } from "../../helpers"
 import FormActivity from "../Prospect/Components/FormActivity"
 import { searchContact } from "./service"
 
@@ -32,16 +21,9 @@ const ProspectForm = () => {
   const [contactList, setContactList] = useState([])
   const [userAddress, setUserAddress] = useState(null)
   const [seletedContact, setSeletedcontact] = useState(null)
-  const [imageUrl, setImageUrl] = useState(false)
-
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const showModal = () => {
-    setIsModalOpen(true)
-  }
-
-  const handleCancel = () => {
-    setIsModalOpen(false)
-  }
+  const [formList, setFormList] = useState([])
+  const [formListData, setFormListData] = useState([])
+  const user = getItem("user_data")
 
   const loadProductDetail = (updateForm = true) => {
     setLoading(true)
@@ -65,15 +47,7 @@ const ProspectForm = () => {
             },
           }
 
-          // form.setFieldsValue(forms)
-          form.setFieldsValue({
-            created_at: new Date(),
-            prospect_number: "PROSPECT/SA001/2023",
-            contact_name: "Dany Testing",
-            status: "new",
-            activity_total: 0,
-            tag_name: "Cold",
-          })
+          form.setFieldsValue(forms)
         } else {
           if (seletedContact) {
             form.setFieldValue("contact", {
@@ -83,7 +57,11 @@ const ProspectForm = () => {
           }
         }
       })
-      .catch((e) => setLoading(false))
+      .catch((e) => {
+        setLoading(false)
+        const { data } = e.response
+        form.setFieldsValue(data?.data || data)
+      })
   }
 
   useEffect(() => {
@@ -114,6 +92,10 @@ const ProspectForm = () => {
     axios
       .post("/api/prospect/create", {
         ...values,
+        items: formListData,
+        status: "new",
+        tag: "cold",
+        contact: values?.contact?.value,
       })
       .then((res) => {
         toast.success(res.data.message, {
@@ -153,24 +135,7 @@ const ProspectForm = () => {
       >
         <Card title="Prospect Info">
           <div className="card-body">
-            <table className="mb-4 table-auto">
-              <tbody>
-                <tr>
-                  <td>
-                    <span className="font-semibold">Created date</span>
-                  </td>
-                  <td>: Mon, 02 May 2022 | 13.00</td>
-                </tr>
-                <tr>
-                  <td>
-                    <span className="font-semibold">Created By</span>
-                  </td>
-                  <td>: Renata Putri</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <Form.Item label="Prospect ID" name="prospect_number">
                 <Input disabled />
               </Form.Item>
@@ -196,31 +161,40 @@ const ProspectForm = () => {
                   }}
                 />
               </Form.Item>
+              <Form.Item label="Created By" name="created_by_name">
+                <Input disabled />
+              </Form.Item>
             </div>
           </div>
         </Card>
       </Form>
 
       <Card
-        title="Prospect Details (${count})"
+        title="Prospect Details"
         className="mt-4"
         extra={
           <FormActivity
             initialValues={{
-              user_id: userAddress?.id,
-              nama: userAddress?.name,
-              telepon: userAddress?.telepon || userAddress?.phone,
+              prospect_id,
             }}
-            refetch={() => console.log(userAddress?.id)}
+            refetch={(formData) => {
+              const newFormData = new FormData()
+              newFormData.append("submit_date", formData.submit_date)
+              newFormData.append("notes", formData.notes)
+              newFormData.append("status", formData.status)
+              if (formData.attachment) {
+                newFormData.append("attachment", formData.attachment)
+              }
+
+              // Add the newFormData to your list of form data
+              setFormList([...formList, newFormData])
+              setFormListData([...formListData, formData])
+            }}
           />
         }
       >
         <Table
-          dataSource={
-            userAddress?.address || [
-              { alamat_detail: "testing123", created_at: new Date() },
-            ]
-          }
+          dataSource={detail?.activities || formListData || []}
           columns={[
             {
               title: "No.",
@@ -230,34 +204,39 @@ const ProspectForm = () => {
             },
             {
               title: "Activity",
-              dataIndex: "alamat_detail",
-              key: "alamat_detail",
+              dataIndex: "notes",
+              key: "notes",
             },
             {
               title: "Created On",
-              dataIndex: "created_at",
-              key: "created_at",
+              dataIndex: "submit_date",
+              key: "submit_date",
               render: (text) => {
                 return moment(text).format("DD MMM YYYY")
               },
             },
             {
-              title: "Pilih",
-              dataIndex: "action",
-              key: "action",
-              render: (_, record) => {
-                return (
-                  <>
-                    <button
-                      onClick={() => showModal()}
-                      className="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center"
-                    >
-                      <span className="ml-2">Show </span>
-                    </button>
-                  </>
-                )
-              },
+              title: "Status",
+              dataIndex: "status",
+              key: "status",
             },
+            // {
+            //   title: "Pilih",
+            //   dataIndex: "action",
+            //   key: "action",
+            //   render: (_, record) => {
+            //     return (
+            //       <>
+            //         <button
+            //           onClick={() => showModal()}
+            //           className="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center"
+            //         >
+            //           <span className="ml-2">Show </span>
+            //         </button>
+            //       </>
+            //     )
+            //   },
+            // },
           ]}
           key={"id"}
           pagination={false}
@@ -268,10 +247,7 @@ const ProspectForm = () => {
         <div className="  w-full mt-6 p-4 flex flex-row">
           <button
             onClick={() => {
-              setStatus(1)
-              setTimeout(() => {
-                form.submit()
-              }, 1000)
+              form.submit()
             }}
             className={`text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center`}
           >
@@ -279,151 +255,6 @@ const ProspectForm = () => {
           </button>
         </div>
       </div>
-
-      <Modal
-        width={600}
-        title={
-          <>
-            <span>Prospect Activity</span>
-            <br />
-            <span className="text-xs">
-              You can conduct prospecting activities with a maximum limit of 7
-              times.
-            </span>
-          </>
-        }
-        open={isModalOpen}
-        onOk={() => {
-          form.submit()
-        }}
-        cancelText={"Cancel"}
-        onCancel={handleCancel}
-        okText={"Simpan"}
-      >
-        <Form
-          form={form}
-          name="basic"
-          layout="vertical"
-          // initialValues={{
-          //   user_approval: user.name,
-          // }}
-          onFinish={onFinish}
-          //   onFinishFailed={onFinishFailed}
-          autoComplete="off"
-        >
-          <div className="row">
-            <div className="col-md-12">
-              <Form.Item
-                label="Prospet Date"
-                name="transfer_date"
-                rules={[
-                  {
-                    required: true,
-                    message: "Field Tidak Boleh Kosong!",
-                  },
-                ]}
-              >
-                <DatePicker
-                  placeholder="DD/MM/YYYY"
-                  format={"DD/MM/YYYY"}
-                  className="w-full"
-                />
-              </Form.Item>
-            </div>
-
-            <div className="col-md-12">
-              <Form.Item
-                label="Notes"
-                name="notes"
-                rules={[
-                  {
-                    required: false,
-                    message: "Please input notes!",
-                  },
-                ]}
-              >
-                <TextArea placeholder="Please input your notes prospect here.." />
-              </Form.Item>
-            </div>
-
-            <div className="col-md-6">
-              <Form.Item
-                label="Attactment Photo"
-                name="upload_billing_photo"
-                rules={[
-                  {
-                    required: false,
-                    message: "Please input Photo!",
-                  },
-                ]}
-              >
-                <Upload
-                  name="attachment"
-                  listType="picture-card"
-                  className="avatar-uploader w-100"
-                  showUploadList={false}
-                  multiple={false}
-                  beforeUpload={() => false}
-                  // onChange={(e) =>
-                  //   handleChange({
-                  //     ...e,
-                  //     field: "attachment",
-                  //   })
-                  // }
-                >
-                  {imageUrl ? (
-                    loading ? (
-                      <LoadingOutlined />
-                    ) : (
-                      <img
-                        src={imageUrl}
-                        alt="avatar"
-                        className="max-h-[100px] h-28 w-28 aspect-square"
-                      />
-                    )
-                  ) : (
-                    <div>
-                      {loading ? <LoadingOutlined /> : <PlusOutlined />}
-                      <div
-                        style={{
-                          marginTop: 8,
-                        }}
-                      >
-                        Upload
-                      </div>
-                    </div>
-                  )}
-                </Upload>
-              </Form.Item>
-            </div>
-
-            <div className="col-md-6">
-              <Form.Item
-                label="Status"
-                name="status_id"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your Status!",
-                  },
-                ]}
-              >
-                <Select placeholder="Select Status">
-                  {[
-                    { id: 1, status_name: "New" },
-                    { id: 2, status_name: "Process" },
-                    { id: 3, status_name: "Followed Up" },
-                  ].map((item) => (
-                    <Select.Option value={item.id} key={item.id}>
-                      {item.status_name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </div>
-          </div>
-        </Form>
-      </Modal>
     </Layout>
   )
 }

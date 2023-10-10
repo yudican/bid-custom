@@ -112,8 +112,10 @@ Route::post('purchase-requisition/save', [PurchaseRequisitionController::class, 
 Route::post('mapping/order/webhook', [TiktokWebhookController::class, 'webhook']);
 Route::post('telegram/webhook', [TelegramBotController::class, 'handle']);
 
+
 // prospect
 Route::prefix('prospect')->middleware('auth:sanctum')->group(function () {
+    Route::post('list', [ProspectController::class, 'index']);
     Route::get('list/{status?}', [ProspectController::class, 'index']);
     Route::get('detail/{id}', [ProspectController::class, 'show']);
     Route::get('tags', [ProspectController::class, 'prospectTags']);

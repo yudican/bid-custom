@@ -1,53 +1,37 @@
 import { PlusOutlined } from "@ant-design/icons"
-import { DatePicker, Form, Input, Modal, Select } from "antd"
-import { Option } from "antd/lib/mentions"
-import axios from "axios"
-import React, { useEffect, useState } from "react"
-import { toast } from "react-toastify"
+import { DatePicker, Form, Modal, Select, Upload } from "antd"
+import TextArea from "antd/lib/input/TextArea"
+import React, { useState } from "react"
+import { getBase64 } from "../../../helpers"
 const FormActivity = ({ initialValues = {}, refetch, update = false }) => {
   const [form] = Form.useForm()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [imageUrl, setImageUrl] = useState(null)
+  const [fileList, setFileList] = useState(null)
 
   const showModal = () => {
     setIsModalOpen(true)
   }
 
-  // useEffect(() => {
-  //   loadProvinsi()
-  //   if (initialValues?.provinsi_id) {
-  //     loadKabupaten(initialValues?.provinsi_id)
-  //   }
-  //   if (initialValues?.kabupaten_id) {
-  //     loadKecamatan(initialValues?.kabupaten_id)
-  //   }
-  //   if (initialValues?.kecamatan_id) {
-  //     loadKelurahan(initialValues?.kecamatan_id)
-  //   }
-  // }, [
-  //   initialValues?.provinsi_id,
-  //   initialValues?.kabupaten_id,
-  //   initialValues?.kecamatan_id,
-  // ])
+  const handleChange = ({ fileList }) => {
+    const list = fileList.pop()
+    setLoading(true)
+    setTimeout(() => {
+      getBase64(list.originFileObj, (url) => {
+        setLoading(false)
+        setImageUrl(url)
+      })
+      setFileList(list.originFileObj)
+    }, 1000)
+  }
 
   const handleSaveAddress = (values) => {
-    axios
-      .post("/api/contact/address/save-address", {
-        ...initialValues,
-        ...values,
-      })
-      .then((res) => {
-        toast.success(res.data.message, {
-          position: toast.POSITION.TOP_RIGHT,
-        })
-        setIsModalOpen(false)
-        refetch()
-      })
-      .catch((err) => {
-        const { message } = err.response.data
-        toast.error(message, {
-          position: toast.POSITION.TOP_RIGHT,
-        })
-      })
+    setIsModalOpen(false)
+    return refetch({
+      ...values,
+      attachment: fileList,
+    })
   }
 
   return (
@@ -65,16 +49,24 @@ const FormActivity = ({ initialValues = {}, refetch, update = false }) => {
       )}
 
       <Modal
-        title="Form Activity"
+        width={600}
+        title={
+          <>
+            <span>Prospect Activity</span>
+            <br />
+            <span className="text-xs">
+              You can conduct prospecting activities with a maximum limit of 7
+              times.
+            </span>
+          </>
+        }
         open={isModalOpen}
         onOk={() => {
           form.submit()
-          // setIsModalOpen(false);
         }}
-        cancelText={"Batal"}
+        cancelText={"Cancel"}
         onCancel={() => setIsModalOpen(false)}
         okText={"Simpan"}
-        // width={1000}
       >
         <Form
           form={form}
@@ -85,74 +77,111 @@ const FormActivity = ({ initialValues = {}, refetch, update = false }) => {
           //   onFinishFailed={onFinishFailed}
           autoComplete="off"
         >
-          <div className="">
-            <Form.Item
-              label="Fullname"
-              name="nama"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your Fullname!",
-                },
-              ]}
-            >
-              <Input />
-            </Form.Item>
+          <div className="row">
+            <div className="col-md-12">
+              <Form.Item
+                label="Prospet Date"
+                name="submit_date"
+                rules={[
+                  {
+                    required: true,
+                    message: "Field Tidak Boleh Kosong!",
+                  },
+                ]}
+              >
+                <DatePicker
+                  placeholder="DD/MM/YYYY"
+                  format={"DD/MM/YYYY"}
+                  className="w-full"
+                />
+              </Form.Item>
+            </div>
 
-            <Form.Item
-              label="Email"
-              name="email"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your Email!",
-                },
-              ]}
-            >
-              <Input />
-            </Form.Item>
+            <div className="col-md-12">
+              <Form.Item
+                label="Notes"
+                name="notes"
+                rules={[
+                  {
+                    required: false,
+                    message: "Please input notes!",
+                  },
+                ]}
+              >
+                <TextArea placeholder="Please input your notes prospect here.." />
+              </Form.Item>
+            </div>
 
-            <Form.Item
-              label="No Telepon"
-              name="telepon"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your No Telepon!",
-                },
-              ]}
-            >
-              <Input />
-            </Form.Item>
+            <div className="col-md-6">
+              <Form.Item
+                label="Attactment Photo"
+                name="attachment"
+                rules={[
+                  {
+                    required: false,
+                    message: "Please input Photo!",
+                  },
+                ]}
+              >
+                <Upload
+                  name="attachment"
+                  listType="picture-card"
+                  className="avatar-uploader w-100"
+                  showUploadList={false}
+                  multiple={false}
+                  beforeUpload={() => false}
+                  onChange={(e) => handleChange(e)}
+                >
+                  {imageUrl ? (
+                    loading ? (
+                      <LoadingOutlined />
+                    ) : (
+                      <img
+                        src={imageUrl}
+                        alt="avatar"
+                        className="max-h-[100px] h-28 w-28 aspect-square"
+                      />
+                    )
+                  ) : (
+                    <div>
+                      {loading ? <LoadingOutlined /> : <PlusOutlined />}
+                      <div
+                        style={{
+                          marginTop: 8,
+                        }}
+                      >
+                        Upload
+                      </div>
+                    </div>
+                  )}
+                </Upload>
+              </Form.Item>
+            </div>
 
-            <Form.Item
-              label="Birth of Date"
-              name="bod"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your Birth of Date!",
-                },
-              ]}
-            >
-              <DatePicker className="w-full" />
-            </Form.Item>
-
-            <Form.Item
-              label="Jenis Kelamin"
-              name="gender"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your Jenis Kelamin!",
-                },
-              ]}
-            >
-              <Select placeholder="Select Jenis Kelamin">
-                <Option value="Laki-Laki">Laki-Laki</Option>
-                <Option value="Perempuan">Perempuan</Option>
-              </Select>
-            </Form.Item>
+            <div className="col-md-6">
+              <Form.Item
+                label="Status"
+                name="status"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input your Status!",
+                  },
+                ]}
+              >
+                <Select placeholder="Select Status">
+                  {[
+                    { id: "new", status_name: "New" },
+                    { id: "proccess", status_name: "Process" },
+                    { id: "followed up", status_name: "Followed Up" },
+                  ].map((item) => (
+                    <Select.Option value={item.id} key={item.id}>
+                      {item.status_name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </div>
           </div>
         </Form>
       </Modal>

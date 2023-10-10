@@ -16,14 +16,21 @@ class ContactController extends Controller
 {
     public function getContactList()
     {
-        $user = User::whereHas('roles', function ($query) {
+
+        $user = auth()->user();
+        $contact = User::whereHas('roles', function ($query) {
             return $query->where('role_type', ['member', 'agent', 'subagent']);
         })->where('created_by', auth()->user()->id)->get();
 
+        if (in_array($user->role->role_type, ['superadmin', 'admin', 'adminsales'])) {
+            $contact = User::whereHas('roles', function ($query) {
+                return $query->where('role_type', ['member', 'agent', 'subagent']);
+            })->get();
+        }
 
         $users = [];
 
-        foreach ($user as $key => $val) {
+        foreach ($contact as $key => $val) {
             $users[] = [
                 'id' => $val->id,
                 'name' => $val->name,

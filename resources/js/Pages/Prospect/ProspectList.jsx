@@ -26,7 +26,6 @@ const ProspectList = () => {
   const [loadingExport, setLoadingExport] = useState(false)
   const [selectedRowKeys, setSelectedRowKeys] = useState([])
   const [readyToSubmit, setReadyToSubmit] = useState(false)
-  const [loadingSubmit, setLoadingSubmit] = useState(false)
 
   const loadContact = (
     url = "/api/prospect/list",
@@ -37,8 +36,8 @@ const ProspectList = () => {
     axios
       .post(url, {
         perpage,
-        type: "manual",
         account_id: getItem("account_id"),
+        type: "admin",
         ...params,
       })
       .then((res) => {
@@ -46,16 +45,7 @@ const ProspectList = () => {
         setTotal(total)
         setCurrentPage(current_page)
         // setProspectList(newData)
-        setProspectList([
-          {
-            created_at: new Date(),
-            prospect_number: "PROSPECT/SA001/2023",
-            contact_name: "Dany Testing",
-            status: "new",
-            activity_total: 0,
-            tag_name: "Cold",
-          },
-        ])
+        setProspectList(data)
         setLoading(false)
       })
   }

@@ -61,7 +61,7 @@ class ContactController extends Controller
             $contact->where('created_by', $createdBy);
         }
 
-        if (in_array($role, ['superadmin', 'adminsales', 'leadsales', 'admin'])) {
+        if (in_array($role, ['adminsales', 'leadsales', 'admin'])) {
             $contact->where('created_by', $user->id);
         }
 

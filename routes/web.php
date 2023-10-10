@@ -193,8 +193,8 @@ Route::group(['middleware' => ['auth:sanctum', 'user.authorization']], function 
 
     // prospect
     Route::get('prospect', [ProspectController::class, 'home'])->name('spa.prospect.index');
-    Route::get('prospect/detail/{uid_lead}', [ProspectController::class, 'home'])->name('spa.prospect.detail');
-    Route::get('prospect/form/{uid_lead?}', [ProspectController::class, 'home'])->name('spa.prospect.form');
+    Route::get('prospect/detail/{prospect_id}', [ProspectController::class, 'home'])->name('spa.prospect.detail');
+    Route::get('prospect/form/{prospect_id?}', [ProspectController::class, 'home'])->name('spa.prospect.form');
 
     // order lead manual
     Route::get('order/manual/order-lead', [SpaOrderManualController::class, 'index'])->name('spa.order-lead-manual.index');

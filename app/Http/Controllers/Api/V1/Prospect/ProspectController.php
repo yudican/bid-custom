@@ -22,7 +22,12 @@ class ProspectController extends Controller
     // index
     public function index(Request $request)
     {
-        $prospect = Prospect::where('created_by', auth()->user()->id);
+        $prospect = Prospect::query();
+        $user = auth()->user();
+        if (in_array($user->role->role_type, ['superadmin', 'admin', 'adminsales'])) {
+        } else {
+            $prospect->where('created_by', $user->id);
+        }
 
         if ($request->query('status')) {
             if ($request->query('status') != 'all') {
@@ -151,12 +156,25 @@ class ProspectController extends Controller
 
     public function show($id)
     {
-        $prospect = Prospect::with(['activities'])->where('uuid', $id)->where('created_by', auth()->user()->id)->first();
+        $prospect = Prospect::with(['activities'])->where('uuid', $id)->first();
 
         if (!$prospect) {
+            $latestProspect = Prospect::latest()->first();
+
+            $sequenceNumber = 'SA001';
+            $currentYear = now()->format('Y');
+            if ($latestProspect) {
+                $number = explode('/', $latestProspect->prospect_number);
+                $sequenceNumber = (int)substr($number[1], -3) + 1;
+            }
+
+            $prospect_number = 'PROSPECT/SA' . str_pad($sequenceNumber, 3, '0', STR_PAD_LEFT) . '/' . $currentYear;
             return response()->json([
                 'message' => 'Not Found',
-                'data' => []
+                'data' => [
+                    'prospect_number' => $prospect_number,
+                    'created_by_name' => auth()->user()->name
+                ]
             ], 404);
         }
 
@@ -197,6 +215,32 @@ class ProspectController extends Controller
 
             $prospect = Prospect::create($data);
 
+            if ($request->items) {
+                $items = $request->items;
+                if (is_array($items) && count($items) > 0) {
+                    foreach ($items as $key => $item) {
+                        $dataProspect = [
+                            'uuid' => Uuid::uuid4(),
+                            'prospect_id' => $prospect->id,
+                            'notes' => isset($item['notes']) ? $item['notes'] : null,
+                            'status' => isset($item['status']) ? $item['status'] : 'new',
+                            'submit_date' => $item['submit_date'] ?? Carbon::now(),
+                        ];
+
+                        // $attachment = null;
+                        // if ($item['attachment']) {
+                        //     $attachment = $this->uploadImage($item, 'attachment');
+                        // }
+
+                        // if ($attachment) {
+                        //     $data['attachment'] = getImage($attachment);
+                        // }
+
+                        ProspectActivity::create($dataProspect);
+                    }
+                }
+            }
+
 
             DB::commit();
             return response()->json([
@@ -207,14 +251,15 @@ class ProspectController extends Controller
             DB::rollBack();
             return response()->json([
                 'message' => 'Error add prospect',
-                'data' => []
+                'data' => [],
+                'error' => $th->getMessage()
             ], 400);
         }
     }
 
     function getProspectActivity($id)
     {
-        $prospect = Prospect::with(['activities'])->where('uuid', $id)->where('created_by', auth()->user()->id)->first();
+        $prospect = Prospect::with(['activities'])->where('uuid', $id)->first();
 
         if (!$prospect) {
             return response()->json([
@@ -479,18 +524,34 @@ class ProspectController extends Controller
 
     public function prospectTags()
     {
-        $data = [
-            ['name' => 'All', 'tag' => 'all', 'count' => Prospect::where('created_by', auth()->user()->id)->count()],
-            ['name' => '🔥 Hot', 'tag' => 'hot', 'count' => Prospect::where('created_by', auth()->user()->id)->where('tag', 'hot')->count()],
-            ['name' => '❄️ Cold', 'tag' => 'cold', 'count' => Prospect::where('created_by', auth()->user()->id)->where('tag', 'cold')->count()],
-            ['name' => '🌤 Warm', 'tag' => 'warm', 'count' => Prospect::where('created_by', auth()->user()->id)->where('tag', 'warm')->count()],
-        ];
+        $user = auth()->user();
+        if (in_array($user->role->role_type, ['superadmin', 'admin', 'adminsales'])) {
+            $data = [
+                ['name' => 'All', 'tag' => 'all', 'count' => Prospect::count()],
+                ['name' => '🔥 Hot', 'tag' => 'hot', 'count' => Prospect::where('tag', 'hot')->count()],
+                ['name' => '❄️ Cold', 'tag' => 'cold', 'count' => Prospect::where('tag', 'cold')->count()],
+                ['name' => '🌤 Warm', 'tag' => 'warm', 'count' => Prospect::where('tag', 'warm')->count()],
+            ];
 
-        return response()->json([
-            'error' => false,
-            'message' => 'List Tag',
-            'data' => $data,
-        ]);
+            return response()->json([
+                'error' => false,
+                'message' => 'List Tag',
+                'data' => $data,
+            ]);
+        } else {
+            $data = [
+                ['name' => 'All', 'tag' => 'all', 'count' => Prospect::where('created_by', auth()->user()->id)->count()],
+                ['name' => '🔥 Hot', 'tag' => 'hot', 'count' => Prospect::where('created_by', auth()->user()->id)->where('tag', 'hot')->count()],
+                ['name' => '❄️ Cold', 'tag' => 'cold', 'count' => Prospect::where('created_by', auth()->user()->id)->where('tag', 'cold')->count()],
+                ['name' => '🌤 Warm', 'tag' => 'warm', 'count' => Prospect::where('created_by', auth()->user()->id)->where('tag', 'warm')->count()],
+            ];
+
+            return response()->json([
+                'error' => false,
+                'message' => 'List Tag',
+                'data' => $data,
+            ]);
+        }
     }
 
 

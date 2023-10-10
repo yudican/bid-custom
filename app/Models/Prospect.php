@@ -16,7 +16,7 @@ class Prospect extends Model
         'status',
         'tag',
     ];
-    protected $appends = ['contact_name', 'created_by_name', 'tag_name', 'activity_total', 'profile_photo_url'];
+    protected $appends = ['contact_name', 'created_by_name', 'role_name', 'tag_name', 'activity_total', 'profile_photo_url'];
 
     protected static function boot()
     {
@@ -85,6 +85,18 @@ class Prospect extends Model
 
         if ($user) {
             return $user->name;
+        }
+
+        return '-';
+    }
+
+
+    public function getRoleNameAttribute()
+    {
+        $user = User::find($this->created_by);
+
+        if ($user) {
+            return $user?->role?->role_name ?? '-';
         }
 
         return '-';
