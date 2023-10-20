@@ -12,11 +12,12 @@ class Prospect extends Model
         'uuid',
         'prospect_number',
         'contact',
+        'async_to',
         'created_by',
         'status',
         'tag',
     ];
-    protected $appends = ['contact_name', 'created_by_name', 'role_name', 'tag_name', 'activity_total', 'profile_photo_url'];
+    protected $appends = ['contact_name', 'contact_async_name', 'created_by_name', 'role_name', 'tag_name', 'activity_total', 'profile_photo_url'];
 
     protected static function boot()
     {
@@ -35,6 +36,7 @@ class Prospect extends Model
             $prospect->prospect_number = 'PROSPECT/SA' . str_pad($sequenceNumber, 3, '0', STR_PAD_LEFT) . '/' . $currentYear;
         });
     }
+
 
     /**
      * Get all of the activities for the Prospect
@@ -59,6 +61,17 @@ class Prospect extends Model
     public function getContactNameAttribute()
     {
         $user = User::find($this->contact, ['name']);
+
+        if ($user) {
+            return $user->name;
+        }
+
+        return '-';
+    }
+
+    public function getContactAsyncNameAttribute()
+    {
+        $user = User::find($this->async_to, ['name']);
 
         if ($user) {
             return $user->name;

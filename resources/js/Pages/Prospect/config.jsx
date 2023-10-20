@@ -5,11 +5,16 @@ import {
   EyeOutlined,
   RightOutlined,
 } from "@ant-design/icons"
-import { Dropdown, Menu, message } from "antd"
+import { Badge, Dropdown, Menu, message } from "antd"
 import axios from "axios"
 import React from "react"
 import { useNavigate } from "react-router-dom"
-import { formatDate, formatNumber } from "../../helpers"
+import {
+  capitalizeString,
+  formatDate,
+  formatNumber,
+  prospectStatusColor,
+} from "../../helpers"
 
 const getStatusItems = (status) => {
   switch (status) {
@@ -197,6 +202,14 @@ const prospectListColumn = [
     title: "Status",
     dataIndex: "status",
     key: "status",
+    render: (text) => {
+      return (
+        <Badge
+          count={text === "onprogress" ? "On Progress" : capitalizeString(text)}
+          color={prospectStatusColor(text)}
+        />
+      )
+    },
   },
   {
     title: "Activity",
@@ -210,9 +223,10 @@ const prospectListColumn = [
   },
   {
     title: "Created On",
-    dataIndex: "created_on",
-    key: "created_on",
-    render: (text) => {
+    dataIndex: "created_at",
+    key: "created_at",
+    render: (text, record) => {
+      console.log(record, "created_on")
       if (text) {
         return formatDate(text)
       }

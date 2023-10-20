@@ -67,7 +67,8 @@ class ContactController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Form Tidak Lengkap'
+                'message' => 'Form Tidak Lengkap',
+                'error' => $validator->errors()
             ], 400);
         }
 

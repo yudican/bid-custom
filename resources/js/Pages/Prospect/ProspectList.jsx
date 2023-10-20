@@ -130,7 +130,7 @@ const ProspectList = () => {
       <button
         // onClick={() => handleGetUid()}
         onClick={() => navigate("form")}
-        className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center ml-2"
+        className="text-white bg-blueColor hover:bg-blueColor/80 focus:ring-4 focus:outline-none focus:ring-blueColor font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center ml-2"
       >
         {uidLoading ? <LoadingOutlined /> : <PlusOutlined />}
         <span className="ml-2">Tambah Prospect</span>

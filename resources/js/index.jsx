@@ -103,6 +103,8 @@ import OngkirForm from "./Pages/Master/MasterOngkir/OngkirForm"
 import ProspectList from "./Pages/Prospect/ProspectList"
 import ProspectDetail from "./Pages/Prospect/ProspectDetail"
 import ProspectForm from "./Pages/Prospect/ProspectForm"
+import OrderOnlineList from "./Pages/OrderOnline/OrderOnlineList"
+import OrderOnlineForm from "./Pages/OrderOnline/OrderOnlineForm"
 // import AgentList from "./Pages/AgentManagement/AgentList";
 const AgentList = lazy(() => import("./Pages/AgentManagement/AgentList"))
 // import DomainAgent from "./Pages/AgentManagement/DomainAgent";
@@ -325,9 +327,17 @@ const App = () => {
             <Route path="/prospect" element={<ProspectList />} />
             <Route
               path="/prospect/detail/:prospect_id"
-              element={<ProspectDetail />}
+              element={<ProspectForm />}
             />
             <Route path="/prospect/form" element={<ProspectForm />} />
+
+            {/* order online */}
+            <Route path="/order-online" element={<OrderOnlineList />} />
+            <Route
+              path="/order-online/detail/:order_online_id"
+              element={<OrderOnlineForm />}
+            />
+            <Route path="/order-online/form" element={<OrderOnlineForm />} />
 
             {/* Dashboard */}
             <Route path="/dashboard" element={<Dashboard />} />

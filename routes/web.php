@@ -195,6 +195,11 @@ Route::group(['middleware' => ['auth:sanctum', 'user.authorization']], function 
     Route::get('prospect', [ProspectController::class, 'home'])->name('spa.prospect.index');
     Route::get('prospect/detail/{prospect_id}', [ProspectController::class, 'home'])->name('spa.prospect.detail');
     Route::get('prospect/form/{prospect_id?}', [ProspectController::class, 'home'])->name('spa.prospect.form');
+   
+    // order online
+    Route::get('order-online', [ProspectController::class, 'home'])->name('spa.order-online.index');
+    Route::get('order-online/detail/{order_online_id}', [ProspectController::class, 'home'])->name('spa.order-online.detail');
+    Route::get('order-online/form/{order_online_id?}', [ProspectController::class, 'home'])->name('spa.order-online.form');
 
     // order lead manual
     Route::get('order/manual/order-lead', [SpaOrderManualController::class, 'index'])->name('spa.order-lead-manual.index');

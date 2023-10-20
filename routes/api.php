@@ -138,6 +138,14 @@ Route::prefix('activity')->middleware('auth:sanctum')->group(function () {
     Route::post('update/{id}', [ActivityController::class, 'updatedActivity']);
 });
 
+// order online
+Route::prefix('order-online')->middleware('auth:sanctum')->group(function () {
+    Route::get('list', [ActivityController::class, 'index']);
+    Route::get('detail/{id}', [ActivityController::class, 'show']);
+    Route::post('create', [ActivityController::class, 'createActivity']);
+    Route::post('update/{id}', [ActivityController::class, 'updatedActivity']);
+});
+
 Route::prefix('contact')->middleware('auth:sanctum')->group(function () {
     Route::get('list', [V1ContactController::class, 'getContactList']);
     Route::post('create', [V1ContactController::class, 'createContact']);

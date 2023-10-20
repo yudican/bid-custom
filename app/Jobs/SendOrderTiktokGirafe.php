@@ -46,6 +46,7 @@ class SendOrderTiktokGirafe implements ShouldQueue
             ]);
 
             $responseJSON = json_decode($response->getBody(), true);
+            
             setSetting('response_giraffe', json_encode($responseJSON));
         } catch (\Throwable $th) {
             setSetting('response_giraffe_error', $th->getMessage());

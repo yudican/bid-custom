@@ -37,20 +37,18 @@ class PrintInvoice implements ShouldQueue
      */
     public function handle()
     {
+        $seller_id = '7494769230760545061'; // from tiktok
+        $apiKey = 'MJGEFLIUYEGLIEUF3487LKIHO';
         $client = new Client();
         $data = $this->data;
         try {
-            $response = $client->request('POST', 'https://giraffe.daftar-agen.com/task', [
+            $response = $client->request('POST', 'https://giraffe-v2.aimi.dev/api/tektok/label/merge?apikey=' . $apiKey, [
                 'headers' => [
                     'Content-Type' => 'application/json',
                 ],
                 'body' => json_encode([
-                    'topic' => 'aimi_maintasks',
-                    'task' => 'html_to_pdf',
-                    'data' => [
-                        'papersize' => 'A4',
-                        'urls' => $data,
-                    ],
+                    'seller_id' => $seller_id,
+                    'data' => $data,
                 ]),
             ]);
             $responseJSON = json_decode($response->getBody(), true);

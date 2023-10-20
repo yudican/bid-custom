@@ -19,6 +19,7 @@ class ProspectController extends Controller
     {
         return view('spa.spa-index');
     }
+
     // index
     public function index(Request $request)
     {
@@ -26,7 +27,12 @@ class ProspectController extends Controller
         $user = auth()->user();
         if (in_array($user->role->role_type, ['superadmin', 'admin', 'adminsales'])) {
         } else {
-            $prospect->where('created_by', $user->id);
+            $user = auth()->user();
+            if ($user->role->role_type == 'cs') {
+                $prospect->where('async_to', $user->id)->orWhere('created_by', $user->id);
+            } else {
+                $prospect->where('created_by', $user->id);
+            }
         }
 
         if ($request->query('status')) {
@@ -211,36 +217,38 @@ class ProspectController extends Controller
                 'created_by' => auth()->user()->id,
                 'status' => 'new',
                 'tag' => $request->tag,
+                'async_to' => $request->async_to,
             ];
 
-            $prospect = Prospect::create($data);
+            $prospect = Prospect::updateOrCreate(['uuid' => $request->prospect_id], $data);
 
-            if ($request->items) {
-                $items = $request->items;
-                if (is_array($items) && count($items) > 0) {
-                    foreach ($items as $key => $item) {
-                        $dataProspect = [
-                            'uuid' => Uuid::uuid4(),
-                            'prospect_id' => $prospect->id,
-                            'notes' => isset($item['notes']) ? $item['notes'] : null,
-                            'status' => isset($item['status']) ? $item['status'] : 'new',
-                            'submit_date' => $item['submit_date'] ?? Carbon::now(),
-                        ];
+            if (!$request->prospect_id) {
+                if ($request->items) {
+                    $items = $request->items;
+                    if (is_array($items) && count($items) > 0) {
+                        foreach ($items as $key => $item) {
+                            $dataProspect = [
+                                'uuid' => Uuid::uuid4(),
+                                'prospect_id' => $prospect->id,
+                                'notes' => isset($item['notes']) ? $item['notes'] : null,
+                                'status' => isset($item['status']) ? $item['status'] : 'new',
+                                'submit_date' => $item['submit_date'] ?? Carbon::now(),
+                            ];
 
-                        // $attachment = null;
-                        // if ($item['attachment']) {
-                        //     $attachment = $this->uploadImage($item, 'attachment');
-                        // }
+                            // $attachment = null;
+                            // if ($item['attachment']) {
+                            //     $attachment = $this->uploadImage($item, 'attachment');
+                            // }
 
-                        // if ($attachment) {
-                        //     $data['attachment'] = getImage($attachment);
-                        // }
+                            // if ($attachment) {
+                            //     $data['attachment'] = getImage($attachment);
+                            // }
 
-                        ProspectActivity::create($dataProspect);
+                            ProspectActivity::create($dataProspect);
+                        }
                     }
                 }
             }
-
 
             DB::commit();
             return response()->json([
@@ -406,13 +414,13 @@ class ProspectController extends Controller
 
             DB::commit();
             return response()->json([
-                'message' => 'Successfully add prospect Activity',
+                'message' => 'Successfully update prospect Activity',
                 'data' => $prospect
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Error add prospect Activity',
+                'message' => 'Error update prospect Activity',
                 'data' => []
             ], 400);
         }

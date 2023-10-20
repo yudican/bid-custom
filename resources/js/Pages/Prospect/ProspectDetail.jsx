@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import LoadingFallback from "../../components/LoadingFallback"
 import Layout from "../../components/layout"
-import { formatDate, getItem } from "../../helpers"
+import { getItem } from "../../helpers"
 
 const ProspectDetail = () => {
   const [form] = Form.useForm()

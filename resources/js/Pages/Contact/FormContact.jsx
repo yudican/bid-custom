@@ -16,7 +16,7 @@ import React, { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "react-toastify"
 import Layout from "../../components/layout"
-import { getBase64, handleString, pluck } from "../../helpers"
+import { getBase64, getInitials, handleString, pluck } from "../../helpers"
 import ModalTautanTelegram from "./Components/ModalTautanTelegram"
 
 const FormContact = () => {
@@ -29,6 +29,7 @@ const FormContact = () => {
   const [contact, setContact] = useState([])
   const [bussinessEntity, setBussinnesEntity] = useState([])
   const [message, setMessage] = useState("")
+  const [initialName, setInitialName] = useState(null)
 
   const [roleSelected, setRoleSelected] = useState(null)
 
@@ -139,6 +140,7 @@ const FormContact = () => {
     formData.append("pic_name", values.pic_name || null)
     formData.append("pic_phone", values.pic_phone || null)
     formData.append("company_address", values.company_address || null)
+    initialName && formData.append("initialName", initialName)
 
     axios
       .post("/api/contact/save-contact", formData)
@@ -218,7 +220,14 @@ const FormContact = () => {
                   },
                 ]}
               >
-                <Input placeholder="Ketik Nama Lengkap" />
+                <Input
+                  placeholder="Ketik Nama Lengkap"
+                  onChange={(e) => {
+                    const { value } = e.target
+                    setInitialName(getInitials(value))
+                    form.setFieldValue("uid", getInitials(value) + "-23001")
+                  }}
+                />
               </Form.Item>
             </div>
             <div className="col-md-6">
@@ -389,11 +398,13 @@ const FormContact = () => {
                   className="w-full mb-2"
                   placeholder="Select Sales Channel"
                 >
-                  <Select.Option value={"mitra"}>Mitra</Select.Option>
-                  <Select.Option value={"distributor"}>
-                    Distributor
+                  <Select.Option value={"marketplace"}>
+                    Marketplace
                   </Select.Option>
-                  <Select.Option value={"e-store"}>E-Store</Select.Option>
+                  <Select.Option value={"toko-offline"}>
+                    Toko Offline
+                  </Select.Option>
+                  <Select.Option value={"whatsapp"}>Whatsapp</Select.Option>
                 </Select>
               </Form.Item>
             </div>

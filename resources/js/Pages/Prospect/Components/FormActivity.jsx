@@ -1,15 +1,18 @@
-import { PlusOutlined } from "@ant-design/icons"
+import { LoadingOutlined, PlusOutlined } from "@ant-design/icons"
 import { DatePicker, Form, Modal, Select, Upload } from "antd"
 import TextArea from "antd/lib/input/TextArea"
 import React, { useState } from "react"
 import { getBase64 } from "../../../helpers"
+import moment from "moment"
+
 const FormActivity = ({ initialValues = {}, refetch, update = false }) => {
+  console.log(initialValues, "initialValues")
   const [form] = Form.useForm()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [imageUrl, setImageUrl] = useState(null)
   const [fileList, setFileList] = useState(null)
-
+  // console.log(fileList, "fileList")
   const showModal = () => {
     setIsModalOpen(true)
   }
@@ -31,6 +34,7 @@ const FormActivity = ({ initialValues = {}, refetch, update = false }) => {
     return refetch({
       ...values,
       attachment: fileList,
+      image_url: imageUrl,
     })
   }
 
@@ -39,13 +43,22 @@ const FormActivity = ({ initialValues = {}, refetch, update = false }) => {
       {!update ? (
         <button
           onClick={() => showModal()}
-          className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center"
+          className="text-white bg-blueColor hover:bg-blueColor/70 focus:ring-4 focus:outline-none focus:ring-blueColor font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center"
         >
           <PlusOutlined />
           <span className="ml-2">Tambah Activity</span>
         </button>
       ) : (
-        <span onClick={() => showModal()}>Update</span>
+        <span
+          className={`${
+            initialValues.status === "followed up"
+              ? "text-gray-400"
+              : "text-blueColor cursor-pointer"
+          }`}
+          onClick={() => initialValues.status !== "followed up" && showModal()}
+        >
+          Update
+        </span>
       )}
 
       <Modal
@@ -72,7 +85,13 @@ const FormActivity = ({ initialValues = {}, refetch, update = false }) => {
           form={form}
           name="basic"
           layout="vertical"
-          initialValues={initialValues}
+          initialValues={{
+            ...initialValues,
+            submit_date: moment(
+              initialValues.submit_date ?? new Date(),
+              "YYYY-MM-DD"
+            ),
+          }}
           onFinish={handleSaveAddress}
           //   onFinishFailed={onFinishFailed}
           autoComplete="off"
@@ -90,8 +109,8 @@ const FormActivity = ({ initialValues = {}, refetch, update = false }) => {
                 ]}
               >
                 <DatePicker
-                  placeholder="DD/MM/YYYY"
-                  format={"DD/MM/YYYY"}
+                  // placeholder="DD/MM/YYYY"
+                  // format={"DD/MM/YYYY"}
                   className="w-full"
                 />
               </Form.Item>

@@ -59,14 +59,14 @@ class MasterController extends Controller
     public function getRole($role_user = 'superadmin')
     {
         if (in_array($role_user, ['superadmin', 'admin', 'adminsales'])) {
-            $role = Role::whereIn('role_type', ['superadmin', 'admin', 'purchasing', 'mitra', 'finance', 'warehouse'])->get();
+            $role = Role::whereIn('role_type', ['superadmin', 'admin', 'purchasing', 'mitra', 'finance', 'warehouse', 'cs', 'leadcs', 'leadsales', 'member'])->get();
             return response()->json([
                 'status' => 'success',
                 'data' => $role
             ]);
         }
 
-        $role = Role::whereIn('role_type', ['admin', 'purchasing', 'mitra', 'finance', 'warehouse'])->get();
+        $role = Role::whereIn('role_type', ['admin', 'purchasing', 'mitra', 'finance', 'warehouse', 'cs', 'leadcs', 'leadsales', 'member'])->get();
         return response()->json([
             'status' => 'success',
             'data' => $role

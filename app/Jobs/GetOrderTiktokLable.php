@@ -50,6 +50,8 @@ class GetOrderTiktokLable implements ShouldQueue
                 if (isset($responseJSON['data']['doc_url'])) {
                     $order = OrderTiktok::where('tiktok_order_id', $this->order_id)->first();
                     $order->update(['label_url' => $responseJSON['data']['doc_url']]);
+                    //Send To Giraffe Label
+                    SendOrderTiktokGirafe::dispatch($order['order_id'], $responseJSON['data']['doc_url'])->onQueue('send-notification');
                 }
             }
         } catch (ClientException $th) {

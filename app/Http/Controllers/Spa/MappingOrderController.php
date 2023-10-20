@@ -459,7 +459,7 @@ class MappingOrderController extends Controller
         foreach ($selected as $value) {
             $order = OrderTiktok::find($value);
 
-            $urls[] = $order->label_url;
+            $urls[] = $order->tiktok_order_id;
             $warehouse = Warehouse::where('warehouse_tiktok_id', $order->warehouse_id)->first();
             if ($warehouse) {
                 foreach ($warehouse->users as $key => $user) {
