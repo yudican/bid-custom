@@ -131,7 +131,7 @@ const ProspectForm = () => {
   }
 
   const handleSearchContactAsync = async (e) => {
-    return searchContact(e).then((results) => {
+    return searchContact(e, ["cs"]).then((results) => {
       const newResult = results.map((result) => {
         return { label: result.nama, value: result.id }
       })
@@ -251,7 +251,7 @@ const ProspectForm = () => {
                     placeholder="Cari Contact"
                     fetchOptions={handleSearchContactAsync}
                     filterOption={false}
-                    defaultOptions={contactList}
+                    defaultOptions={contactAsyncList}
                     className="w-full"
                     onChange={(e) => {
                       setSeletedAsync(e)
