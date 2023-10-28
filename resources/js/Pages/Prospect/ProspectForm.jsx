@@ -190,7 +190,7 @@ const ProspectForm = () => {
           title="Prospect Info"
           extra={
             <a
-              href={`wa.me/${detail?.contact_whatsapp}`}
+              href={`https://wa.me/${detail?.contact_whatsapp}`}
               target="_blank"
               className="bg-green-400 hover:bg-green-400/50 p-2 rounded-lg text-white flex justify-center items-center"
             >
