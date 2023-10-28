@@ -1,71 +1,181 @@
-import { Button, Card, Form, Input, Select, Switch, Table, message } from "antd"
+import {
+  DeleteOutlined,
+  DownOutlined,
+  DownloadOutlined,
+  EyeFilled,
+  LoadingOutlined,
+  PlusOutlined,
+  PrinterFilled,
+  PrinterOutlined,
+  UploadOutlined,
+} from "@ant-design/icons"
+import {
+  Button,
+  Card,
+  DatePicker,
+  Dropdown,
+  Form,
+  Input,
+  InputNumber,
+  Menu,
+  Modal,
+  Pagination,
+  Select,
+  Table,
+  Upload,
+  message,
+} from "antd"
+import TextArea from "antd/lib/input/TextArea"
 import axios from "axios"
+import moment from "moment"
 import React, { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { toast } from "react-toastify"
+import LoadingFallback from "../../components/LoadingFallback"
 import DebounceSelect from "../../components/atoms/DebounceSelect"
 import Layout from "../../components/layout"
-import { formatNumber, getItem } from "../../helpers"
-import FormAddressModal from "../Contact/Components/FormAddressModal"
-import ModalBilling from "./Components/ModalBilling"
-import ProductList from "./Components/ProductList"
-import { billingColumns } from "./config"
-import { searchContact, searchSales } from "./service"
+import { formatNumber, getInitials } from "../../helpers"
+import { searchContact } from "./service"
+import ModalProduct from "../../components/Modal/ModalProduct"
+
+const statusSwitch = (text) => {
+  switch (text) {
+    case "New Order":
+      return "#FF6600"
+    case "Packing":
+      return "#7B61FF"
+    case "Delivery":
+      return "#008BE1"
+    case "Completed":
+      return "#43936C"
+    case "Cancelled":
+      return "#CB3A31"
+    default:
+      return "black"
+  }
+}
+
+const menu = (
+  <Menu>
+    <Menu.Item icon={<PrinterOutlined />}>
+      <a href="#">Cetak Sales Invoice</a>
+    </Menu.Item>
+    <Menu.Item icon={<PrinterOutlined />}>
+      <a href="#">Cetak Label</a>
+    </Menu.Item>
+  </Menu>
+)
+
+const props = {
+  name: "file",
+  action: "https://www.mocky.io/v2/5cc8019d300000980a055e76",
+  headers: {
+    authorization: "authorization-text",
+  },
+  beforeUpload: (file) => {
+    const isPNG = file.type === "image/png"
+    const isJPG = file.type === "image/jpeg" || file.type === "image/jpg"
+    if (!isPNG || !isJPG) {
+      message.error(`${file.name} is not a png file`)
+    }
+    return isPNG || isJPG || Upload.LIST_IGNORE
+  },
+  onChange(info) {
+    if (info.file.status !== "uploading") {
+      console.log(info.file, info.fileList)
+    }
+    if (info.file.status === "done") {
+      message.success(`${info.file.name} file uploaded successfully`)
+    } else if (info.file.status === "error") {
+      message.error(`${info.file.name} file upload failed.`)
+    }
+  },
+}
 
 const OrderOnlineForm = () => {
   const navigate = useNavigate()
-  const [form] = Form.useForm()
-  // console.log(form.getFieldValue(), "form")
-  const role = getItem("role")
-  const userData = getItem("user_data", true)
-  const { uid_lead } = useParams()
-  const defaultItems = [
-    {
-      product_id: null,
-      price: null,
-      qty: 1,
-      tax_id: null,
-      discount_id: null,
-      final_price: null,
-      total_price: null,
-      uid_lead,
-      margin_price: 0,
-      bundling: 1,
-      price_product: 0,
-      price_nego: 0,
-      total_price_nego: 0,
-      stock: 0,
-      id: 0,
-      key: 0,
-    },
-  ]
+  const { order_online_id } = useParams()
+  const [form, contactForm] = Form.useForm()
+
+  // local state
   const [detail, setDetail] = useState(null)
-  const [warehouses, setWarehouses] = useState([])
-  const [masterBin, setMasterBin] = useState([])
-  const [termOfPayments, setTermOfPayments] = useState([])
-  const [brands, setBrands] = useState([])
-  const [products, setProducts] = useState([])
-  const [taxs, setTaxs] = useState([])
-  const [discounts, setDiscounts] = useState([])
-  const [productItems, setProductItems] = useState(defaultItems)
-  const [productLoading, setProductLoading] = useState(false)
-  const [billingData, setBilingData] = useState([])
+  const [disabled, setDisabled] = useState(false)
   const [loading, setLoading] = useState(false)
   const [contactList, setContactList] = useState([])
-  const [showContact, setShowContact] = useState(false)
-  const [salesList, setSalesList] = useState([])
-  const [showBilling, setShowBilling] = useState(false)
-  const [showBin, setShowBin] = useState(false)
-  const [status, setStatus] = useState(0)
-  const [userAddress, setUserAddress] = useState(null)
-  const [selectedAddress, setSelectedAddress] = useState(null)
-  const [selectedwarehouse, setSelectedWarehouse] = useState(null)
+  const [productList, setProductList] = useState([])
+  console.log(productList, "productList")
+  const [total, setTotal] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [search, setSearch] = useState("")
+  const [filterData, setFilterData] = useState({})
 
+  const [contactAsyncList, setContactAsyncList] = useState([])
   const [seletedContact, setSeletedcontact] = useState(null)
-  const loadBrand = () => {
-    axios.get("/api/master/brand").then((res) => {
-      setBrands(res.data.data)
+  const [seletedAsync, setSeletedAsync] = useState(null)
+  const [warehouses, setWarehouses] = useState([])
+  const [termOfPayments, setTermOfPayments] = useState([])
+  const [roles, setRoles] = useState([])
+  const [roleSelected, setRoleSelected] = useState(null)
+  const loadRole = () => {
+    axios.get(`/api/master/role`).then((res) => {
+      setRoles(res.data.data)
     })
+  }
+  // contact
+  const [initialName, setInitialName] = useState(null)
+  const [provinsi, setProvinsi] = useState([])
+  const [kabupaten, setKabupaten] = useState([])
+  const [kecamatan, setKecamatan] = useState([])
+  const [kelurahan, setKelurahan] = useState([])
+  const [initialValues, setInitialValues] = useState({})
+
+  // loading
+  const [loadingProvinsi, setLoadingProvinsi] = useState(false)
+  const [loadingKabupaten, setLoadingKabupaten] = useState(false)
+  const [loadingKecamatan, setLoadingKecamatan] = useState(false)
+  const [loadingKelurahan, setLoadingKelurahan] = useState(false)
+
+  // modal
+  const [isModalContactOpen, setIsModalContactOpen] = useState(false)
+  const [confirmLoading, setConfirmLoading] = useState(false)
+  const [modalText, setModalText] = useState("Content of the modal")
+  const showModal = () => {
+    setIsModalContactOpen(true)
+  }
+  const handleOk = () => {
+    setModalText("The modal will be closed after two seconds")
+    setConfirmLoading(true)
+    setTimeout(() => {
+      setIsModalContactOpen(false)
+      setConfirmLoading(false)
+    }, 2000)
+  }
+  const handleCancel = () => {
+    console.log("Clicked cancel button")
+    setIsModalContactOpen(false)
+  }
+
+  // modal activities
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
+  const showModalActivities = () => {
+    setIsActivityModalOpen(true)
+  }
+  const handleOkActivities = () => {
+    setIsActivityModalOpen(false)
+  }
+  const handleCancelActivities = () => {
+    setIsActivityModalOpen(false)
+  }
+
+  // modal upload bukti bayar
+  const [isModalBuktiBayarOpen, setIsModalBuktiBayarOpen] = useState(false)
+  const showModalBuktiBayar = () => {
+    setIsModalBuktiBayarOpen(true)
+  }
+  const handleOkBuktiBayar = () => {
+    setIsModalBuktiBayarOpen(false)
+  }
+  const handleCancelBuktiBayar = () => {
+    setIsModalBuktiBayarOpen(false)
   }
 
   const loadWarehouse = () => {
@@ -73,101 +183,48 @@ const OrderOnlineForm = () => {
       setWarehouses(res.data.data)
     })
   }
-  const loadMasterBin = () => {
-    axios.get("/api/master/bin").then((res) => {
-      setMasterBin(res.data.data)
-    })
-  }
-
-  const loadUserAddress = (id) => {
-    axios.get("/api/general/user-with-address/" + id).then((res) => {
-      setUserAddress(res.data.data)
-      console.log(res.data.data)
-      const { address } = res?.data?.data || {}
-      if (address) {
-        const selectedAddr = address.find((item) => item.is_default == 1)
-        if (selectedAddr) {
-          setSelectedAddress(selectedAddr.id)
-        }
-      }
-    })
-  }
-
   const loadTop = () => {
     axios.get("/api/master/top").then((res) => {
       setTermOfPayments(res.data.data)
     })
   }
 
-  const loadProducts = (warehouse_id) => {
-    axios.get("/api/master/products/sales-offline").then((res) => {
-      const { data } = res.data
-
-      const newData = data.map((item) => {
-        const stock_warehouse =
-          (item?.stock_warehouse &&
-            item.stock_warehouse.length > 0 &&
-            item?.stock_warehouse) ||
-          []
-        const stock_off_market = stock_warehouse.find(
-          (item) => item.id == warehouse_id
-        )
-
-        const canBuy =
-          stock_off_market?.stock < item?.qty_bundling ? true : false
-
-        const stock = stock_off_market?.stock || 0
-        return {
-          ...item,
-          stock_off_market: stock_off_market?.stock || 0,
-          disabled: stock < 1 ? true : false,
-        }
-      })
-      setProducts(newData)
-    })
-  }
-
-  const loadTaxs = () => {
-    axios.get("/api/master/taxs").then((res) => {
-      setTaxs(res.data.data)
-    })
-  }
-
-  const loadDiscounts = () => {
-    axios.get("/api/master/discounts/sales-offline").then((res) => {
-      setDiscounts(res.data.data)
-    })
-  }
-
-  const getOrderBilling = () => {
-    axios.get(`/api/order-manual/billing/list/${uid_lead}`).then((res) => {
-      const { data } = res.data
-      if (data && data.length > 0) {
-        const dataBillings = data.map((item) => {
-          return {
-            id: item.id,
-            account_name: item.account_name,
-            account_bank: item.account_bank,
-            total_transfer: formatNumber(item.total_transfer),
-            transfer_date: item.transfer_date,
-            upload_billing_photo: item.upload_billing_photo_url,
-            upload_transfer_photo: item.upload_transfer_photo_url,
-            status: item.status,
-            notes: item.notes ?? "-",
-            approved_by_name: item.approved_by_name,
-            approved_at: item.approved_at || "-",
-            payment_number: item.payment_number || "-",
-          }
-        })
-        setBilingData(dataBillings)
-      }
-    })
-  }
-
-  const loadProductDetail = (updateForm = true) => {
+  const loadProductVariant = (
+    url = "/api/product-management/product-variant",
+    perpage = 10,
+    params = { page: 1 }
+  ) => {
     setLoading(true)
     axios
-      .get(`/api/order-manual/${uid_lead}`)
+      .post(url, { perpage, ...params })
+      .then((res) => {
+        const { data, total, current_page } = res.data.data
+        setTotal(total)
+        setCurrentPage(current_page)
+        const newData = data.map((item) => {
+          return {
+            ...item,
+            id: item.id,
+            name: item.name,
+            package_name: item.package_name,
+            variant_name: item.variant_name,
+            product_image: item?.image_url,
+            status: item?.status,
+            stock: item?.stock,
+            final_price: formatNumber(item?.price?.final_price, "Rp. "),
+          }
+        })
+
+        setProductList(newData)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }
+
+  const loadProspectDetail = (updateForm = true) => {
+    setLoading(true)
+    axios
+      .get(`/api/order-online/detail/${order_online_id}`)
       .then((res) => {
         const { data } = res.data
         setLoading(false)
@@ -178,33 +235,26 @@ const OrderOnlineForm = () => {
             label: data?.contact_name,
             value: data?.contact_user?.id,
           })
+          setSeletedAsync({
+            label: data?.async_contact_name,
+            value: data?.async_contact_user?.id,
+          })
           const forms = {
             ...data,
             contact: {
               label: data?.contact_name,
               value: data?.contact_user?.id,
             },
-            sales: {
-              label: data?.sales_user?.name,
-              value: data?.sales_user?.id,
-            },
-            payment_terms: data?.payment_term?.id,
+            role: data?.role_name,
+            prospect_number: data?.prospect_number,
+            created_on: moment(data?.created_at).format(
+              "ddd, DD MMM YYYY | HH:mm"
+            ),
           }
+
           console.log(forms, "forms")
 
-          if (role === "sales") {
-            forms.sales = {
-              label: userData.name,
-              value: userData.id,
-            }
-          }
-
-          form.setFieldsValue(forms) // suspected form error
-          setShowBilling(forms.payment_terms === 4 ? true : false)
-          loadProducts(data?.warehouse_id)
-          setSelectedWarehouse(data?.warehouse_id)
-          setShowContact(data?.contact ? true : false)
-          loadUserAddress(data?.contact_user?.id)
+          form.setFieldsValue(forms)
         } else {
           if (seletedContact) {
             form.setFieldValue("contact", {
@@ -212,57 +262,19 @@ const OrderOnlineForm = () => {
               value: seletedContact?.value,
             })
           }
-        }
-
-        getOrderBilling()
-      })
-      .catch((e) => setLoading(false))
-  }
-
-  const getProductNeed = (warehouse_id = null) => {
-    axios.get(`/api/order-manual/product-need/${uid_lead}`).then((res) => {
-      const { data } = res.data
-      if (data && data.length > 0) {
-        const newData = data?.map((item, index) => {
-          const stock_warehouse =
-            (item?.product?.stock_warehouse &&
-              item?.product?.stock_warehouse.length > 0 &&
-              item?.product?.stock_warehouse) ||
-            []
-          const stock_off_market =
-            stock_warehouse.find((item) => item.id == selectedwarehouse)
-              ?.stock || item?.product?.stock_off_market
-          const som = stock_off_market
-          const bundling =
-            item?.product?.qty_bundling > 0 ? item?.product?.qty_bundling : 1
-
-          return {
-            key: index,
-            id: item.id,
-            product: item?.product?.name || "-",
-            product_id: item?.product_id,
-            price: formatNumber(item?.prices?.final_price),
-            qty: item?.qty,
-            total_price: formatNumber(item?.prices?.final_price * item?.qty),
-            final_price: formatNumber(item?.final_price),
-            margin_price: formatNumber(item?.margin_price),
-            discount_id: item?.discount_id,
-            bundling: item?.product?.qty_bundling,
-            tax_id: item?.tax_id,
-            tax_amount: formatNumber(item?.tax_amount),
-            uid_lead,
-            stock: som,
-            price_nego: item?.price_nego,
-            price_product: formatNumber(item?.price),
-            total_price_nego: formatNumber(item?.price_nego),
-            disabled_discount: item?.disabled_discount,
-            disabled_price_nego: item?.disabled_price_nego,
+          if (seletedAsync) {
+            form.setFieldValue("async_to", {
+              label: seletedAsync?.label,
+              value: seletedAsync?.value,
+            })
           }
-        })
-        setProductItems(newData)
-        loadProductDetail(false)
-      }
-    })
+        }
+      })
+      .catch((e) => {
+        setLoading(false)
+        const { data } = e.response
+        form.setFieldsValue(data?.data || data)
+      })
   }
 
   const handleGetContact = () => {
@@ -274,28 +286,72 @@ const OrderOnlineForm = () => {
     })
   }
 
-  const handleGetSales = () => {
-    searchSales(null).then((results) => {
-      const newResult = results.map((result) => {
-        return { label: result.nama, value: result.id }
+  const loadProvinsi = () => {
+    setLoadingProvinsi(true)
+    axios
+      .get("/api/master/provinsi")
+      .then((res) => {
+        setProvinsi(res.data.data)
+        setLoadingProvinsi(false)
       })
-
-      setSalesList(newResult)
-    })
+      .catch(() => setLoadingProvinsi(false))
+  }
+  const loadKabupaten = (provinsi_id) => {
+    setLoadingKabupaten(true)
+    axios
+      .get("/api/master/kabupaten/" + provinsi_id)
+      .then((res) => {
+        setKabupaten(res.data.data)
+        setLoadingKabupaten(false)
+      })
+      .catch(() => setLoadingKabupaten(false))
+  }
+  const loadKecamatan = (kabupaten_id) => {
+    setLoadingKecamatan(true)
+    axios
+      .get("/api/master/kecamatan/" + kabupaten_id)
+      .then((res) => {
+        setKecamatan(res.data.data)
+        setLoadingKecamatan(false)
+      })
+      .catch(() => setLoadingKecamatan(false))
+  }
+  const loadKelurahan = (kelurahan_id) => {
+    setLoadingKelurahan(true)
+    axios
+      .get("/api/master/kelurahan/" + kelurahan_id)
+      .then((res) => {
+        setKelurahan(res.data.data)
+        setLoadingKelurahan(false)
+      })
+      .catch(() => setLoadingKelurahan(false))
   }
 
   useEffect(() => {
-    getOrderBilling()
-    loadBrand()
+    loadProvinsi()
+    if (initialValues?.provinsi_id) {
+      loadKabupaten(initialValues?.provinsi_id)
+    }
+    if (initialValues?.kabupaten_id) {
+      loadKecamatan(initialValues?.kabupaten_id)
+    }
+    if (initialValues?.kecamatan_id) {
+      loadKelurahan(initialValues?.kecamatan_id)
+    }
+  }, [
+    initialValues?.provinsi_id,
+    initialValues?.kabupaten_id,
+    initialValues?.kecamatan_id,
+  ])
+
+  useEffect(() => {
     loadWarehouse()
-    loadMasterBin()
     loadTop()
-    loadTaxs()
-    loadDiscounts()
-    loadProductDetail(false)
-    getProductNeed()
+    loadRole()
+    loadProductVariant()
+
+    loadProspectDetail()
     handleGetContact()
-    handleGetSales()
   }, [])
 
   const handleSearchContact = async (e) => {
@@ -308,582 +364,953 @@ const OrderOnlineForm = () => {
     })
   }
 
-  const handleSearchSales = async (e) => {
-    return searchSales(e).then((results) => {
-      const newResult = results.map((result) => {
-        return { label: result.nama, value: result.id }
-      })
-
-      return newResult
-    })
-  }
-
-  const handleChangeProductPrice = ({ dataIndex, value, key }) => {
-    console.log(dataIndex, value, "handle change product price")
-    const data = [...productItems]
-    // if (dataIndex ==='qty'){}
-    data[key][dataIndex] = value
-    setProductItems(data)
-  }
-
-  const handleChangeProductItem = ({ dataIndex, value, key }) => {
-    console.log(dataIndex, value, "handle change product")
-    const record = productItems.find((item) => item.id === key) || {}
-    setProductLoading(true)
-    axios
-      .post("/api/lead-master/product-needs", {
-        ...record,
-        [dataIndex]: parseInt(value),
-        final_price: record?.price_nego,
-        price: record?.price_product,
-        qty: dataIndex == "product_id" ? 1 : record.qty,
-        key,
-        item_id: key > 0 ? key : null,
-      })
-      .then((res) => {
-        setProductLoading(false)
-        getProductNeed()
-      })
-  }
-
-  const productItem = (value) => {
-    const item = value.type === "add" ? defaultItems[0] : {}
-    setProductLoading(true)
-    axios
-      .post(`/api/order-manual/product-items/${value.type}`, {
-        ...value,
-        ...item,
-        item_id: value.key,
-        uid_lead,
-      })
-      .then((res) => {
-        const { message } = res.data
-        getProductNeed()
-        setProductLoading(false)
-        toast.success(message, {
-          position: toast.POSITION.TOP_RIGHT,
-        })
-      })
-  }
-  const handleClickProductItem = (value) => {
-    productItem({ ...value, newData: false })
-    if (productItems.length === 1 && productItems[0].id === 0) {
-      productItem({ ...value, newData: true })
-    }
-  }
-
   const onFinish = (values) => {
-    const hasProduct = productItems.every((item) => item.product_id)
-    if (!hasProduct) {
-      return toast.error("Product harus diisi", {
-        position: toast.POSITION.TOP_RIGHT,
-      })
-    }
-
-    // if (!selectedAddress) {
-    //   toast.error("Alamat Belum Dipilih", {
-    //     position: toast.POSITION.TOP_RIGHT,
-    //   });
-    // }
-
-    const hasQty = productItems.every((item) => item.qty > 0)
-    if (!hasQty) {
-      return toast.error("Minimal Pembalian adalah 1", {
-        position: toast.POSITION.TOP_RIGHT,
-      })
-    }
-
-    const billingStatus = showBilling ? 2 : 1
-    const status_save = status < 0 ? status : billingStatus
-    axios
-      .post("/api/order-manual/form/save", {
-        ...values,
-        status: status_save,
-        status_save: detail?.status,
-        uid_lead,
-        address_id: selectedAddress,
-        contact: values.contact.value,
-        sales: values.sales.value,
-        kode_unik: detail?.kode_unik,
-        product_items: productItems,
-        account_id: getItem("account_id"),
-        type: "manual",
-      })
-      .then((res) => {
-        toast.success(res.data.message, {
-          position: toast.POSITION.TOP_RIGHT,
-        })
-        return navigate("/order/order-manual")
-      })
-      .catch((err) => {
-        const { message } = err.response.data
-        toast.error(message, {
-          position: toast.POSITION.TOP_RIGHT,
-        })
-      })
+    console.log(values, "on finish")
   }
 
-  // if (loading) {
-  //   return (
-  //     <Layout title="Detail" href="/order/order-manual">
-  //       <LoadingFallback />
-  //     </Layout>
-  //   )
-  // }
+  if (loading) {
+    return (
+      <Layout title="Detail" href="/order-online">
+        <LoadingFallback />
+      </Layout>
+    )
+  }
 
   return (
-    <Layout
-      title="Order Manual Form"
-      href="/order/order-manual"
-      // rightContent={rightContent}
-    >
-      <Form
-        form={form}
-        name="basic"
-        layout="vertical"
-        onFinish={onFinish}
-        //   onFinishFailed={onFinishFailed}
-        autoComplete="off"
-      >
-        <Card title="Form Order">
-          <div className="card-body grid grid-cols-3 gap-x-4">
-            <Form.Item
-              label="Type Customer"
-              name="type_customer"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input Type Customer!",
-                },
-              ]}
-            >
-              <Select placeholder="Select Type Customer">
-                <Select.Option value={"new"} key={"new"}>
-                  New Customer
-                </Select.Option>
-                <Select.Option value={"existing"} key={"existing"}>
-                  Existing Customer
-                </Select.Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              label="Contact"
-              name="contact"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input Contact!",
-                },
-              ]}
-            >
-              <DebounceSelect
-                showSearch
-                placeholder="Cari Contact"
-                fetchOptions={handleSearchContact}
-                filterOption={false}
-                defaultOptions={contactList}
-                className="w-full"
-                onChange={(e) => {
-                  loadUserAddress(e.value)
-                  setSeletedcontact(e)
-                  setShowContact(true)
-                }}
-                dropdownRender={(menu) => (
-                  <>
-                    {menu}
-                    <div className="py-1 flex w-full items-center justify-center">
-                      <Button
-                        className=""
-                        type="text"
-                        onClick={() => {
-                          navigate("/contact/create")
-                        }}
+    <>
+      <Layout title="Create Data Order" href="/order-online">
+        <Form
+          form={form}
+          name="basic"
+          layout="vertical"
+          onFinish={onFinish}
+          autoComplete="off"
+        >
+          <Card
+            title={
+              <>
+                <div>
+                  <span className="text-base font-medium">
+                    Silahkan Input Data Order
+                  </span>
+                  <br />
+                  <span className="text-sm font-light">
+                    Pastikan Anda memberikan informasi yang benar dan lengkap
+                    untuk memastikan pengiriman yang lancar.
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-base font-medium">Status</span> <br />
+                    <span
+                      className="font-semibold"
+                      style={{ color: statusSwitch("New Order") }}
+                    >
+                      New Order
+                    </span>
+                  </div>
+                  <div>
+                    <Dropdown overlay={menu}>
+                      <button
+                        className="text-blueColor border bg-white hover:bg-white focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm p-2 text-center inline-flex items-center mr-2"
+                        // onClick={() => handleExportContent()}
                       >
-                        <strong className="text-blue-500">+ Add Contact</strong>
-                      </Button>
-                    </div>
-                  </>
-                )}
-              />
-            </Form.Item>
+                        <PrinterFilled style={{ fontSize: 12 }} />
+                        <span className="ml-2 mr-4">Print</span>
+                        <DownOutlined style={{ fontSize: 8 }} />
+                      </button>
+                    </Dropdown>
 
-            <Form.Item
-              label="Sales"
-              name="sales"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input Sales!",
-                },
-              ]}
-            >
-              <DebounceSelect
-                disabled={role === "sales"}
-                defaultOptions={
-                  role === "sales"
-                    ? [{ label: userData.name, value: userData.id }]
-                    : salesList
-                }
-                showSearch
-                placeholder="Cari Sales"
-                fetchOptions={handleSearchSales}
-                filterOption={false}
-                className="w-full"
-              />
-            </Form.Item>
+                    <button
+                      className="ml-2 text-white bg-green-500 hover:bg-green-500 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center mr-2"
+                      // onClick={() => handleExportContent()}
+                    >
+                      Assign to Packaging
+                    </button>
+                    <button
+                      className="ml-2 text-white bg-green-500 hover:bg-green-500 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center mr-2"
+                      // onClick={() => handleExportContent()}
+                    >
+                      Get AWB Number
+                    </button>
+                  </div>
+                </div>
+              </>
+            }
+          >
+            <div className="card-body">
+              <div className="w-full py-10 flex justify-center items-center mb-4 border rounded-md">
+                Segera lakukan proses Packing..
+              </div>
 
-            <Form.Item
-              label="Brand"
-              name="brand_id"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your Brand!",
-                },
-              ]}
-            >
-              <Select placeholder="Select Brand">
-                {brands.map((brand) => (
-                  <Select.Option value={brand.id} key={brand.id}>
-                    {brand.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+              <div className="w-full py-10 px-11 flex justify-between items-center mb-4 border rounded-md">
+                <div>
+                  <span>Status Payment</span>
+                  <br />
+                  <strong>-</strong>
+                </div>
+                <div>
+                  <span>Courier</span>
+                  <br />
+                  <strong>JNE Regular</strong>
+                </div>
+                <div>
+                  <span>Print Invoice:</span>
+                  <br />
+                  <strong>-</strong>
+                </div>
+                <div>
+                  <span>Print Label:</span>
+                  <br />
+                  <strong>-</strong>
+                </div>
+                <div>
+                  <span>AWB Number</span>
+                  <br />
+                  <strong>-</strong>
+                </div>
 
-            <Form.Item
-              label="Warehouse"
-              name="warehouse_id"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your Warehouse!",
-                },
-              ]}
-            >
-              <Select
-                placeholder="Select Warehouse"
-                onChange={(e) => {
-                  setSelectedWarehouse(e)
-                  loadProducts(e)
-                  setProductItems(defaultItems)
-                }}
-              >
-                {warehouses.map((warehouse) => (
-                  <Select.Option value={warehouse.id} key={warehouse.id}>
-                    {warehouse.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+                <div className="h-10 border" />
 
-            <Form.Item
-              label="Payment Term"
-              name="payment_terms"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your Payment Term!",
-                },
-              ]}
-            >
-              <Select
-                placeholder="Select Payment Term"
-                onChange={(e) => {
-                  setShowBilling(e === 4 ? true : false)
-                  setShowBin(e === 3 ? true : false)
-                }}
-              >
-                {termOfPayments.map((top) => (
-                  <Select.Option value={top.id} key={top.id}>
-                    {top.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+                <button
+                  className="text-orangeOrder border bg-white hover:bg-white focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm p-2 text-center inline-flex items-center mr-2"
+                  onClick={showModalActivities}
+                >
+                  <span>Show Activities</span>
+                  <EyeFilled className="ml-2" />
+                </button>
+              </div>
 
-            {showBin && (
-              <Form.Item
-                label="Lokasi BIN"
-                name="master_bin_id"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your Warehouse!",
-                  },
-                ]}
-              >
-                <Select placeholder="Pilih Lokasi BIN">
-                  {masterBin.map((bin) => (
-                    <Select.Option value={bin.id} key={bin.id}>
-                      {bin.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            )}
+              <div className="grid grid-cols-2 pr-36 mb-4">
+                <div>
+                  <h3>Sales Order</h3>
+                  <table className="table-auto">
+                    <tr className="h-8">
+                      <td className="w-40">Created Date</td>
+                      <td className="text-neutralColor">
+                        : 17 Oct 2023, 10:53 AM
+                      </td>
+                    </tr>
+                    <tr className="h-8">
+                      <td className="w-40">Sales Tag</td>
+                      <td className="text-neutralColor">: Order Whatsapp</td>
+                    </tr>
+                    <tr className="h-8">
+                      <td className="w-40">Order ID</td>
+                      <td className="text-neutralColor">: SO-137033432</td>
+                    </tr>
+                    <tr className="h-8">
+                      <td className="w-40">Payment Method</td>
+                      <td className="text-neutralColor">: Manual Transfer</td>
+                    </tr>
+                    <tr className="h-8">
+                      <td className="w-40">Shipping Method</td>
+                      <td className="text-neutralColor">: JNE Regular</td>
+                    </tr>
+                  </table>
+                </div>
+                <div>
+                  <h3>Shipping Info</h3>
+                  <table className="table-auto">
+                    <tr className="h-8">
+                      <td className="w-40">Nama Penerima</td>
+                      <td>:</td>
+                      <td className="text-neutralColor">Jessica Kumala Sari</td>
+                    </tr>
+                    <tr className="h-8">
+                      <td className="w-40">Email</td>
+                      <td>:</td>
+                      <td className="text-neutralColor">jessica@gmail.com</td>
+                    </tr>
+                    <tr className="h-8">
+                      <td className="w-40">No. Telepon</td>
+                      <td>:</td>
+                      <td className="text-neutralColor">081766556412</td>
+                    </tr>
+                    <tr className="h-8">
+                      <td className="w-40">Tipe Alamat</td>
+                      <td>:</td>
+                      <td className="text-neutralColor">Rumah</td>
+                    </tr>
+                    <tr className="h-8">
+                      <td className="w-40">Alamat Lengkap</td>
+                      <td>:</td>
+                      <td className="text-neutralColor">
+                        Jawa Timur, Tuban, Wonosobo, 15312 Jl. Raya Tuban
+                        Wonosobo No.5
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+                <div className="md:absolute right-10">
+                  <button
+                    className="text-gray-600 border bg-white hover:bg-white focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm p-2 text-center inline-flex items-center "
+                    onClick={showModalBuktiBayar}
+                  >
+                    <UploadOutlined className="mr-2" />
+                    <span>Upload Bukti Bayar</span>
+                  </button>
+                </div>
+              </div>
 
-            <Form.Item
-              className={!showBin ? "col-span-3" : "col-span-2"}
-              label="Customer Need"
-              name="customer_need"
-            >
-              {!showBin ? (
-                <Input.TextArea placeholder="Ketik Customer Need" />
-              ) : (
-                <Input placeholder="Ketik Customer Need" />
-              )}
-            </Form.Item>
-
-            <div className={"col-md-12"}>
-              {/* {seletedContact && (
+              <div className="grid grid-cols-3 gap-4 mb-4">
                 <Form.Item
-                  label=" Contact Address"
-                  name="address_id"
+                  label="Nama Customer"
+                  name="contact"
                   rules={[
                     {
                       required: true,
-                      message: "Please input your Contact Address!",
+                      message: "Please input Contact!",
                     },
                   ]}
                 >
-                  <Select
-                    placeholder="Pilih Contact Address"
-                    dropdownStyle={{ zIndex: 2 }}
+                  <DebounceSelect
+                    showSearch
+                    placeholder="Cari Contact"
+                    fetchOptions={handleSearchContact}
+                    filterOption={false}
+                    defaultOptions={contactList}
+                    className="w-full"
+                    onChange={(e) => {
+                      setSeletedcontact(e)
+                      form.setFieldValue("role", e?.label?.split(" - ")[1])
+                    }}
                     dropdownRender={(menu) => (
-                      <div className="px-2 mx-auto  z-50">
+                      <>
                         {menu}
-                        <div className="text-center">
-                          <Divider
-                            style={{
-                              margin: "8px 0",
-                            }}
-                          />
-
-                          <FormAddressModal
-                            initialValues={{
-                              user_id: userAddress?.id,
-                              nama: userAddress?.name,
-                              telepon:
-                                userAddress?.telepon || userAddress?.phone,
-                            }}
-                            refetch={() => loadUserAddress(userAddress?.id)}
-                          />
+                        <div className="py-1 flex w-full items-center justify-center">
+                          <Button className="" type="text" onClick={showModal}>
+                            <strong className="text-blue-500">
+                              + Add Contact
+                            </strong>
+                          </Button>
                         </div>
-                      </div>
+                      </>
                     )}
-                  >
-                    {userAddress?.address?.map((bin) => (
-                      <Select.Option value={bin.id} key={bin.id}>
-                        {bin.alamat_detail}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Ship From"
+                  name="warehouse_id"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please input Warehouse!",
+                    },
+                  ]}
+                >
+                  <Select placeholder="Select Warehouse">
+                    {warehouses.map((warehouse) => (
+                      <Select.Option value={warehouse.id} key={warehouse.id}>
+                        {warehouse.name}
                       </Select.Option>
-                    )) || []}
+                    ))}
                   </Select>
                 </Form.Item>
-              )} */}
-            </div>
-          </div>
-        </Card>
-      </Form>
 
-      {showContact && (
-        <Card
-          title="Informasi Alamat"
-          className="mt-4"
-          extra={
-            <FormAddressModal
-              initialValues={{
-                user_id: userAddress?.id,
-                nama: userAddress?.name,
-                telepon: userAddress?.telepon || userAddress?.phone,
-              }}
-              refetch={() => loadUserAddress(userAddress?.id)}
-            />
-          }
-        >
-          <Table
-            dataSource={userAddress?.address || []}
-            columns={[
-              {
-                title: "No.",
-                dataIndex: "no",
-                key: "no",
-                render: (_, record, index) => index + 1,
-              },
-              {
-                title: "Alamat",
-                dataIndex: "alamat_detail",
-                key: "alamat_detail",
-              },
-              {
-                title: "Pilih",
-                dataIndex: "action",
-                key: "action",
-                render: (_, record) => {
-                  return (
-                    <Switch
-                      onChange={(e) => {
-                        // if (selectedAddress) {
-                        //   return setSelectedAddress(null)
-                        // }
-                        return setSelectedAddress(record.id)
-                      }}
-                      checked={
-                        selectedAddress == record.id || record.is_default > 0
-                      }
-                    />
+                <Form.Item
+                  label="Payment Method"
+                  name="payment_term"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please input your Payment Term!",
+                    },
+                  ]}
+                >
+                  <Select placeholder="Select Payment Method">
+                    {termOfPayments.map((top) => (
+                      <Select.Option value={top.id} key={top.id}>
+                        {top.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+
+                <Form.Item
+                  label="Shipping Method"
+                  name="shipping_method"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please input your Shipping Method!",
+                    },
+                  ]}
+                >
+                  <Select placeholder="Select Shipping Method">
+                    {termOfPayments.map((top) => (
+                      <Select.Option value={top.id} key={top.id}>
+                        {top.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+
+                <div className="">
+                  <h3 className="text-sm">Shipping Info</h3>
+                  <span className="text-xs font-base text-neutralColor">
+                    Jessica Kumala Sari
+                    <br /> Rumah
+                    <br />
+                    Indonesia, Jawa Timur, Tuban, Wonosobo, 15312 Jl. Raya Tuban
+                    Wonosobo No.5
+                    <br />
+                    <br />
+                    082767654541
+                  </span>
+                </div>
+
+                <div className="">
+                  <h3 className="text-sm">Billing Info</h3>
+                  <span className="text-xs font-base text-neutralColor">
+                    Jessica Kumala Sari
+                    <br />
+                    Indonesia, Jawa Timur, Tuban, Wonosobo, 15312 Jl. Raya Tuban
+                    Wonosobo No.5
+                    <br />
+                    <br />
+                    082767654541
+                  </span>
+                </div>
+              </div>
+
+              <Table
+                dataSource={productList}
+                pagination={false}
+                scroll={{ x: "max-content" }}
+                tableLayout={"auto"}
+                columns={[
+                  {
+                    title: "No.",
+                    dataIndex: "key",
+                    key: "key",
+                    render: (value, row, index) => index + 1,
+                  },
+                  {
+                    title: "Products",
+                    dataIndex: "name",
+                    key: "name",
+                    render: (text, record, index) => {
+                      return (
+                        <ModalProduct
+                          products={productList}
+                          disabled={disabled?.product_id}
+                          stock={100}
+                          value={record?.product_id}
+                          // handleChange={} // need to add handle to choose product
+                        />
+                      )
+                    },
+                  },
+                  {
+                    title: "SKU",
+                    dataIndex: "sku",
+                    key: "sku",
+                  },
+                  {
+                    title: "Qty",
+                    dataIndex: "qty",
+                    key: "qty",
+                    render: (text) => {
+                      return <InputNumber value={text} />
+                    },
+                  },
+                  {
+                    title: "Regular Price (Rp)",
+                    dataIndex: "regular_price",
+                    key: "regular_price",
+                    // render: (text) => `Rp. ${formatNumber(text)}`,
+                    render: (text) => (
+                      <Input value={formatNumber(text, "Rp. ")} />
+                    ),
+                  },
+                  {
+                    title: "Selling Price (Rp)",
+                    dataIndex: "selling_price",
+                    key: "selling_price",
+                    // render: (text) => `Rp. ${formatNumber(text)}`,
+                    render: (text) => (
+                      <Input value={formatNumber(text, "Rp. ")} />
+                    ),
+                  },
+                  {
+                    title: "Amount",
+                    dataIndex: "amount",
+                    key: "amount",
+                    // render: (text) => `Rp. ${formatNumber(text)}`,
+                    render: (text) => (
+                      <Input value={formatNumber(text, "Rp. ")} />
+                    ),
+                  },
+                  {
+                    title: "Action",
+                    align: "center",
+                    fixed: "right",
+                    width: 100,
+                    render: (text, record) => {
+                      return <Button icon={<DeleteOutlined />}></Button>
+                    },
+                  },
+                ]}
+                summary={(currentData) => {
+                  const price = currentData.reduce(
+                    (acc, curr) => parseInt(acc) + parseInt(curr.amount),
+                    0
                   )
-                },
-              },
-            ]}
-            key={"id"}
-            pagination={false}
-          />
-        </Card>
-      )}
+                  const disount = currentData.reduce(
+                    (acc, curr) => parseInt(acc) + parseInt(curr.disount),
+                    0
+                  )
+                  const total = price + disount
 
-      <Card title="Detail Product" className="mt-4">
-        <ProductList
-          data={productItems}
-          products={products}
-          taxs={taxs}
-          discounts={discounts}
-          onChange={handleChangeProductPrice}
-          handleChange={handleChangeProductItem}
-          handleClick={handleClickProductItem}
-          loading={productLoading}
-          summary={(pageData) => {
-            if (productItems.length > 0) {
-              return (
-                <>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell>Subtotal</Table.Summary.Cell>
-                    <Table.Summary.Cell>
-                      {formatNumber(detail?.subtotal, "Rp ")}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell />
-                  </Table.Summary.Row>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell>Tax</Table.Summary.Cell>
-                    <Table.Summary.Cell>
-                      {formatNumber(detail?.tax_amount, "Rp ")}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell />
-                  </Table.Summary.Row>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell>Discount</Table.Summary.Cell>
-                    <Table.Summary.Cell>
-                      {formatNumber(detail?.discount_amount, "Rp ")}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell />
-                  </Table.Summary.Row>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell />
-                    <Table.Summary.Cell>Total</Table.Summary.Cell>
-                    <Table.Summary.Cell>
-                      {formatNumber(detail?.amount, "Rp ")}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell />
-                  </Table.Summary.Row>
-                </>
-              )
-            }
-          }}
-        />
-      </Card>
+                  return (
+                    <Table.Summary>
+                      <Table.Summary.Cell colSpan={5}>
+                        <div className="flex flex-row justify-between pt-4 pr-4">
+                          <label className="w-1/3">Catatan Pembeli</label>
+                          <Form.Item className="w-2/3" name="notes">
+                            <TextArea
+                              rows={6}
+                              placeholder="Silahkan isi catatan pembelian disini.."
+                              cols={30}
+                            />
+                          </Form.Item>
+                        </div>
+                      </Table.Summary.Cell>
 
-      {showBilling && (
-        <div className="card mt-8">
-          <div className="card-header flex justify-between items-center">
-            <h1 className="header-title">Informasi Penagihan</h1>
-            <ModalBilling
-              detail={{ ...detail, uid_lead }}
-              refetch={getOrderBilling}
-              user={userData}
-            />
-          </div>
-          <div className="card-body">
-            <Table
-              dataSource={billingData}
-              columns={[...billingColumns]}
-              loading={loading}
-              pagination={false}
-              rowKey="id"
-              scroll={{ x: "max-content" }}
-              tableLayout={"auto"}
-            />
-          </div>
-        </div>
-      )}
+                      <Table.Summary.Cell colSpan={3}>
+                        <Table.Summary.Row>
+                          <Table.Summary.Cell>
+                            Sub Total (Rp)
+                          </Table.Summary.Cell>
 
-      {/* <div className="card mt-6 p-4 items-end">
+                          <Table.Summary.Cell />
+
+                          <Table.Summary.Cell align="right">
+                            Rp. {formatNumber(price)}
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell />
+                        </Table.Summary.Row>
+
+                        <Table.Summary.Row>
+                          <Table.Summary.Cell>Discount (Rp)</Table.Summary.Cell>
+
+                          <Table.Summary.Cell />
+
+                          <Table.Summary.Cell align="right">
+                            <Form.Item className="mt-4" name="discount">
+                              <Input
+                                placeholder="Rp 0"
+                                style={{ textAlign: "right" }}
+                              />
+                            </Form.Item>
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell />
+                        </Table.Summary.Row>
+
+                        <Table.Summary.Row>
+                          <Table.Summary.Cell>Total (Rp)</Table.Summary.Cell>
+
+                          <Table.Summary.Cell />
+
+                          <Table.Summary.Cell align="right">
+                            Rp. {formatNumber(total)}
+                          </Table.Summary.Cell>
+                          <Table.Summary.Cell />
+                        </Table.Summary.Row>
+                      </Table.Summary.Cell>
+                    </Table.Summary>
+                  )
+                }}
+              />
+
+              <div
+                onClick={() => {}}
+                className={`
+                  w-full mt-4 cursor-pointer
+                  ${
+                    disabled
+                      ? "text-gray-400 border-gray-400/70 bg-gray-400/5"
+                      : " text-blueColor hover:text-blueColor bg-blueColor/20 border-blueColor/70 hover:border-blueColor"
+                  }
+                  border-2 border-dashed  focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 inline-flex items-center justify-center
+                `}
+              >
+                <PlusOutlined style={{ marginRight: 10 }} />
+                <span>Add More</span>
+              </div>
+            </div>
+          </Card>
+        </Form>
+      </Layout>
+
+      <div className="w-full bg-white shadow-md rounded-md p-4 flex flex-row-reverse">
         <button
           onClick={() => {
-            if (productLoading) {
-              toast.error("Please wait for the product to load")
-              return
-            }
             form.submit()
           }}
-          className={`text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center`}
+          className={`text-white bg-blueColor hover:bg-blueColor/70 focus:ring-4 focus:outline-none focus:ring-blueColor font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center`}
         >
-          {productLoading && <LoadingOutlined />}{" "}
-          <span className="ml-2">Save Order</span>
+          <span>{detail ? "Update" : "Simpan"} Order</span>
         </button>
-      </div> */}
-      <div className="float-right">
-        <div className="  w-full mt-6 p-4 flex flex-row">
-          {!detail && (
-            <button
-              onClick={() => {
-                setStatus(-1)
-                setTimeout(() => {
-                  console.log("status", status)
-                  form.submit()
-                }, 1000)
-              }}
-              className={`text-blue bg-white hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 border font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center mr-2`}
-            >
-              <span className="ml-2">Save Draft</span>
-            </button>
-          )}
-          <button
-            onClick={() => {
-              if (detail?.amount < 1) {
-                return message.error("Anda belum input harga")
-              }
-              setStatus(1)
-              setTimeout(() => {
-                form.submit()
-              }, 1000)
-            }}
-            className={`text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center`}
-          >
-            <span className="ml-2">Save Order</span>
-          </button>
-        </div>
+        <a
+          href="/order-online"
+          className={`mr-2 text-blueColor bg-blueColor/10 hover:bg-blueColor/5 focus:ring-4 focus:outline-none focus:ring-blueColor font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center`}
+        >
+          <span>Kembali</span>
+        </a>
       </div>
-    </Layout>
+
+      <Modal
+        title="Tambah Data Customer Baru"
+        open={isModalContactOpen}
+        onOk={handleOk}
+        confirmLoading={confirmLoading}
+        onCancel={handleCancel}
+        okText="Simpan"
+      >
+        <Form
+          className="grid grid-cols-2 gap-x-4"
+          layout="vertical"
+          form={contactForm}
+        >
+          <Form.Item
+            label="Customer Code"
+            name="uid"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Customer Code!",
+              },
+            ]}
+          >
+            <Input placeholder="Ketik Customer Code" />
+          </Form.Item>
+
+          <Form.Item
+            label="Nama lengkap"
+            name="name"
+            rules={[
+              {
+                required: true,
+                message: "Please input your nama lengkap!",
+              },
+            ]}
+          >
+            <Input
+              placeholder="Ketik Nama Lengkap"
+              onChange={(e) => {
+                const { value } = e.target
+                setInitialName(getInitials(value))
+                form.setFieldValue("uid", getInitials(value) + "-23001")
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="No. Telepon"
+            name="telepon"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Telepon!",
+              },
+            ]}
+          >
+            <Input placeholder="Ketik No Telepon" />
+          </Form.Item>
+
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              {
+                required: true,
+                message: "Please input your password!",
+              },
+            ]}
+          >
+            <Input placeholder="Ketik Email" />
+          </Form.Item>
+
+          <Form.Item
+            label="Role"
+            name="role_id"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Role!",
+              },
+            ]}
+          >
+            <Select
+              placeholder="Select Role"
+              onChange={(e) => {
+                const role = roles.find((role) => role.id === e)
+                setRoleSelected(role.role_type)
+              }}
+            >
+              {roles.map((role) => (
+                <Select.Option value={role.id} key={role.id}>
+                  {role.role_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Sales Tag"
+            name="sales_channels"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Sales Channel!",
+              },
+            ]}
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              className="w-full mb-2"
+              placeholder="Select Sales Channel"
+            >
+              <Select.Option value={"marketplace"}>Marketplace</Select.Option>
+              <Select.Option value={"toko-offline"}>Toko Offline</Select.Option>
+              <Select.Option value={"whatsapp"}>Whatsapp</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <div className="col-span-2 mb-4">Informasi Alamat</div>
+
+          <Form.Item
+            label="Provinsi"
+            name="provinsi_id"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Provinsi!",
+              },
+            ]}
+          >
+            <Select
+              loading={loadingProvinsi}
+              allowClear
+              className="w-full mb-2"
+              placeholder="Pilih Provinsi"
+              onChange={(value) => loadKabupaten(value)}
+            >
+              {provinsi.map((item) => (
+                <Select.Option key={item.pid} value={item.pid}>
+                  {item.nama}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="Kecamatan"
+            name="kecamatan_id"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Kecamatan!",
+              },
+            ]}
+          >
+            <Select
+              allowClear
+              className="w-full mb-2"
+              placeholder="Pilih Kecamatan"
+              loading={loadingKecamatan}
+              onChange={(value) => loadKelurahan(value)}
+            >
+              {kecamatan.map((item) => (
+                <Select.Option key={item.pid} value={item.pid}>
+                  {item.nama}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="Kabupaten"
+            name="kabupaten_id"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Kabupaten!",
+              },
+            ]}
+          >
+            <Select
+              allowClear
+              className="w-full mb-2"
+              placeholder="Pilih Kabupaten"
+              loading={loadingKabupaten}
+              onChange={(value) => loadKecamatan(value)}
+            >
+              {kabupaten.map((item) => (
+                <Select.Option key={item.pid} value={item.pid}>
+                  {item.nama}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="Kelurahan"
+            name="kelurahan_id"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Kelurahan!",
+              },
+            ]}
+          >
+            <Select
+              allowClear
+              className="w-full mb-2"
+              placeholder="Pilih Kelurahan"
+              loading={loadingKelurahan}
+              onChange={(value) => {
+                const data = kelurahan.find((item) => item.pid === value)
+                form.setFieldValue("kodepos", data.zip)
+              }}
+            >
+              {kelurahan.map((item) => (
+                <Select.Option key={item.pid} value={item.pid}>
+                  {item.nama}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Kode Pos"
+            name="kodepos"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Kode Pos!",
+              },
+            ]}
+          >
+            <Input placeholder="Auto Generate" />
+          </Form.Item>
+
+          <div />
+
+          <Form.Item
+            className="col-span-2"
+            label="Nama Jalan"
+            name="alamat"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Nama Jalan!",
+              },
+            ]}
+          >
+            <Input placeholder="Jl. Raya Kuningan No.34" />
+          </Form.Item>
+
+          <Form.Item
+            className="col-span-2"
+            label="Nama Lengkap Penerima"
+            name="nama"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Nama Lengkap Penerima!",
+              },
+            ]}
+          >
+            <Input placeholder="Auto Generate" />
+          </Form.Item>
+
+          <Form.Item
+            label="No. Telepon Penerima"
+            name="nama"
+            rules={[
+              {
+                required: true,
+                message: "Please input your No. Telepon Penerima!",
+              },
+            ]}
+          >
+            <Input placeholder="Auto Generate" />
+          </Form.Item>
+
+          <Form.Item
+            label="Tipe Alamat"
+            name="nama"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Tipe Alamat!",
+              },
+            ]}
+          >
+            <Input placeholder="Ex: Rumah, Kantor, dsb" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Order Activities"
+        open={isActivityModalOpen}
+        onOk={handleOkActivities}
+        onCancel={handleCancelActivities}
+        cancelButtonProps={{ style: { display: "none" } }}
+        okText="Oke"
+      >
+        {[
+          {
+            date: "17 Oct 2023, 10.00",
+            status: "Order Completed",
+          },
+          {
+            date: "16 Oct 2023, 21.00",
+            status: "Order is Delivered",
+          },
+          {
+            date: "16 Oct 2023, 21.00",
+            status: "Order is Shipped",
+          },
+          {
+            date: "16 Oct 2023, 21.00",
+            status: "Invoice Printed",
+          },
+          {
+            date: "16 Oct 2023, 21.00",
+            status: "Order Paid",
+          },
+          {
+            date: "15 Oct 2023, 07.00",
+            status: "Order Created",
+          },
+        ].map((value, index, array) => {
+          const lastIndex = array.length - 1
+
+          return (
+            <table key={index}>
+              <tbody>
+                <tr className="h-20">
+                  <td>
+                    <div className="w-40">
+                      <span className="text-black font-medium text-sm">
+                        {value.date.split(", ")[0]}
+                      </span>
+                      <br />
+                      <span className="text-black text-xs">
+                        {value.date.split(", ")[1]}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="relative">
+                    <div className="flex flex-col items-center absolute top-6 -left-8">
+                      <div className="w-4 h-4 bg-blueColor rounded-full" />{" "}
+                      {index !== lastIndex && (
+                        <div className="h-12 border-l-[1px] border-blueColor mt-2" />
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <p className="text-blueColor font-medium px-2">
+                      {value.status}
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          )
+        })}
+      </Modal>
+
+      <Modal
+        title="Upload Bukti Pembayaran"
+        open={isModalBuktiBayarOpen}
+        onOk={handleOkBuktiBayar}
+        onCancel={handleCancelBuktiBayar}
+        cancelText="Cancel"
+        okText="Simpan Pembayaran"
+      >
+        <Form layout="vertical">
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              label="Nama Bank"
+              name="account_bank"
+              rules={[
+                {
+                  required: true,
+                  message: "Field Tidak Boleh Kosong!",
+                },
+              ]}
+            >
+              <Input placeholder="Nama Bank" />
+            </Form.Item>
+            <Form.Item
+              label={"Nama Pengirim"}
+              name={"nama_pengirim"}
+              rules={[
+                {
+                  required: true,
+                  message: "Field Tidak Boleh Kosong!",
+                },
+              ]}
+            >
+              <Input placeholder="Nama Pengirim" />
+            </Form.Item>
+            <Form.Item
+              label="Tanggal Transfer"
+              name="transfer_date"
+              rules={[
+                {
+                  required: true,
+                  message: "Field Tidak Boleh Kosong!",
+                },
+              ]}
+            >
+              <DatePicker className="w-full" />
+            </Form.Item>
+            <Form.Item
+              label={"Jumlah Transfer (Rp.)"}
+              name={"jumlah_transfer"}
+              rules={[
+                {
+                  required: true,
+                  message: "Field Tidak Boleh Kosong!",
+                },
+              ]}
+            >
+              <Input placeholder="Rp 0" type="number" />
+            </Form.Item>
+
+            <Form.Item label={"Upload By"} name={"upload_by"}>
+              <Input placeholder="None" disabled />
+            </Form.Item>
+
+            <Form.Item
+              label="Attachments (Jpg/Png)"
+              name="attachment"
+              rules={[
+                {
+                  required: true,
+                  message: "Please input Photo!",
+                },
+              ]}
+            >
+              <Upload {...props}>
+                <Button style={{ width: "100%" }}>
+                  File Attachment
+                  <span className="ml-2 pb-2">
+                    <UploadOutlined />
+                  </span>
+                </Button>
+              </Upload>
+            </Form.Item>
+          </div>
+        </Form>
+      </Modal>
+    </>
   )
 }
 

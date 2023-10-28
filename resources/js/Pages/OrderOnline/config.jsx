@@ -1,5 +1,6 @@
 import {
   CloseOutlined,
+  DeleteFilled,
   EditFilled,
   EyeOutlined,
   RightOutlined,
@@ -13,8 +14,13 @@ import { formatDate, formatNumber, inArray } from "../../helpers"
 
 const getStatusItems = (status) => {
   switch (status) {
-    case "Draft":
+    case "New Order":
       return [
+        {
+          label: "Ubah",
+          key: "update",
+          icon: <EditFilled />,
+        },
         {
           label: "Detail",
           key: "detail",
@@ -31,45 +37,20 @@ const getStatusItems = (status) => {
               icon: <EyeOutlined />,
             },
           ],
-        },
-        {
-          label: "Ubah",
-          key: "update",
-          icon: <EditFilled />,
-        },
-      ]
-    case "New":
-      return [
-        {
-          label: "Detail",
-          key: "detail",
-          icon: <EyeOutlined />,
-          children: [
-            {
-              label: "Open Directly",
-              key: "detail",
-              icon: <EyeOutlined />,
-            },
-            {
-              label: "Open In New Tab",
-              key: "detail_new_tab",
-              icon: <EyeOutlined />,
-            },
-          ],
-        },
-        {
-          label: "Ubah",
-          key: "update",
-          icon: <EditFilled />,
         },
         {
           label: "Cancel",
           key: "cancel",
-          icon: <CloseOutlined />,
+          icon: <DeleteFilled />,
         },
       ]
-    case "Open":
+    case "Packing":
       return [
+        {
+          label: "Ubah",
+          key: "update",
+          icon: <EditFilled />,
+        },
         {
           label: "Detail",
           key: "detail",
@@ -87,43 +68,13 @@ const getStatusItems = (status) => {
             },
           ],
         },
-        // {
-        //     label: "Ubah",
-        //     key: "update",
-        //     icon: <EditFilled />,
-        // },
-        // {
-        //     label: "Approve",
-        //     key: "approve",
-        //     icon: <CheckOutlined />,
-        // },
-        // {
-        //   label: "Cancel",
-        //   key: "cancel",
-        //   icon: <CloseOutlined />,
-        // },
+        {
+          label: "Cancel",
+          key: "cancel",
+          icon: <DeleteFilled />,
+        },
       ]
 
-    case "Closed":
-      return [
-        {
-          label: "Detail",
-          key: "detail",
-          icon: <EyeOutlined />,
-          children: [
-            {
-              label: "Open Directly",
-              key: "detail",
-              icon: <EyeOutlined />,
-            },
-            {
-              label: "Open In New Tab",
-              key: "detail_new_tab",
-              icon: <EyeOutlined />,
-            },
-          ],
-        },
-      ]
     default:
       return [
         {
@@ -149,6 +100,7 @@ const getStatusItems = (status) => {
 
 const ActionMenu = ({ value, status = 1 }) => {
   const navigate = useNavigate()
+  console.log(value, status)
 
   return (
     <Menu
@@ -181,8 +133,8 @@ const ActionMenu = ({ value, status = 1 }) => {
 const orderOnlineListColumn = [
   {
     title: "No.",
-    dataIndex: "number",
-    key: "number",
+    dataIndex: "key",
+    key: "key",
     // render: (value, row, index) => index + 1,
   },
   {
@@ -226,25 +178,46 @@ const orderOnlineListColumn = [
     title: "Status",
     dataIndex: "status",
     key: "status",
-    render: (text) => (
-      <span className="text-orangeOrder font-semibold">{text}</span>
-    ),
+    render: (text) => {
+      const statusSwitch = (text) => {
+        switch (text) {
+          case "New Order":
+            return "#FF6600"
+          case "Packing":
+            return "#7B61FF"
+          case "Delivery":
+            return "#008BE1"
+          case "Completed":
+            return "#43936C"
+          case "Cancelled":
+            return "#CB3A31"
+          default:
+            return "black"
+        }
+      }
+
+      return (
+        <span style={{ color: statusSwitch(text) }} className="font-semibold">
+          {text}
+        </span>
+      )
+    },
   },
   {
     title: "Action",
-    key: "id",
     align: "center",
     fixed: "right",
     width: 100,
-    render: (text) => (
-      <Dropdown.Button
-        style={{
-          left: -16,
-        }}
-        // icon={<MoreOutlined />}
-        overlay={<ActionMenu value={text.id} status={text.status} />}
-      ></Dropdown.Button>
-    ),
+    render: (text, record) => {
+      return (
+        <Dropdown.Button
+          style={{
+            left: -16,
+          }}
+          overlay={<ActionMenu value={text.id} status={text.status} />}
+        ></Dropdown.Button>
+      )
+    },
   },
 ]
 
@@ -622,8 +595,8 @@ const ethixColumns = [
   {
     title: "No.",
     width: 100,
-    render: (text, record, index) => index + 1,
     fixed: "left",
+    render: (text, record, index) => index + 1,
   },
   {
     title: "SO Number",
@@ -658,6 +631,7 @@ export {
   activityColumns,
   billingColumns,
   ethixColumns,
+  getStatusItems,
   negotiationsColumns,
   orderDeliveryColumns,
   orderOnlineListColumn,

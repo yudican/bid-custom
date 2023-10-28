@@ -110,6 +110,7 @@ const ProspectForm = () => {
     handleGetContact()
     handleGetContactAsync()
   }, [])
+
   useEffect(() => {
     if (!detail) {
       form.setFieldValue(
@@ -148,6 +149,7 @@ const ProspectForm = () => {
         status: "new",
         tag: values.tag,
         contact: values?.contact?.value,
+        async_to: values?.async_to?.value,
         prospect_id: prospect_id,
       })
       .then((res) => {
@@ -163,23 +165,6 @@ const ProspectForm = () => {
         })
       })
   }
-
-  console.log(form.getFieldsValue(), "field value")
-
-  useEffect(() => {
-    loadProspectDetail(true)
-    handleGetContact()
-  }, [])
-
-  useEffect(() => {
-    if (!detail) {
-      form.setFieldValue(
-        "created_on",
-        moment(new Date()).format("ddd, DD MMM YYYY | HH:mm")
-      )
-      form.setFieldValue("tag", "cold")
-    }
-  }, [])
 
   if (loading) {
     return (

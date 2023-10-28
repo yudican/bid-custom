@@ -10,7 +10,6 @@ import { Input, Pagination, Table } from "antd"
 import axios from "axios"
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { toast } from "react-toastify"
 import Layout from "../../components/layout"
 import {
   formatNumber,
@@ -18,24 +17,38 @@ import {
   getStatusLeadOrder,
   paginateData,
 } from "../../helpers"
-import ModalTax from "../Genie/Components/ModalTax"
 import FilterModal from "./Components/FilterModal"
 import { orderOnlineListColumn } from "./config"
 
+const rowSelection = {
+  onChange: (selectedRowKeys, selectedRows) => {
+    console.log(
+      `selectedRowKeys: ${selectedRowKeys}`,
+      "selectedRows: ",
+      selectedRows
+    )
+  },
+  getCheckboxProps: (record) => ({
+    disabled: record.name === "Disabled User",
+    // Column configuration not to be checked
+    name: record.name,
+  }),
+}
+
 const OrderOnlineList = () => {
+  // hooks
   const navigate = useNavigate()
+
+  // loading state
   const [loading, setLoading] = useState(false)
   const [uidLoading, setUidLoading] = useState(false)
+  const [loadingExport, setLoadingExport] = useState(false)
+
+  // data state
   const [orderList, setOrderList] = useState([])
-  const [total, setTotal] = useState(0)
   const [search, setSearch] = useState("")
   const [isSearch, setIsSearch] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [perPage, setPerpage] = useState(10)
   const [filterData, setFilterData] = useState({})
-  const [loadingExport, setLoadingExport] = useState(false)
-  const [selectedRowKeys, setSelectedRowKeys] = useState([])
-  const [selectedProducts, setSelectedProducts] = useState([])
   const [statusList, setStatusList] = useState([
     { label: "All", value: "all", count: 5 },
     { label: "Packing", value: "packing", count: 5 },
@@ -45,7 +58,14 @@ const OrderOnlineList = () => {
   ])
   const [selectedStatus, setSelectedStatus] = useState("all")
 
-  const loadContact = (
+  // table state
+  const [total, setTotal] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [perPage, setPerpage] = useState(10)
+  const [selectedRowKeys, setSelectedRowKeys] = useState([])
+  console.log(selectedRowKeys, "selectedRowKeys")
+
+  const loadOrder = (
     url = "/api/order-manual",
     perpage = perPage,
     params = { page: currentPage }
@@ -96,7 +116,7 @@ const OrderOnlineList = () => {
         // dummy data
         setOrderList([
           {
-            number: 1,
+            key: "1",
             order_id: "ORDER/2023/00041",
             contact: "Jessica - Customer",
             created_by: "Ulfa",
@@ -105,8 +125,27 @@ const OrderOnlineList = () => {
             payment_method: "Manual Transfer",
             status: "New Order",
           },
+          {
+            key: "2",
+            order_id: "ORDER/2023/00042",
+            contact: "Jessica - Customer",
+            created_by: "Ulfa",
+            created_on: new Date(),
+            amount_total: 5000000,
+            payment_method: "Manual Transfer",
+            status: "Packing",
+          },
+          {
+            key: "3",
+            order_id: "ORDER/2023/00043",
+            contact: "Jessica - Customer",
+            created_by: "Ulfa",
+            created_on: new Date(),
+            amount_total: 6000000,
+            payment_method: "Manual Transfer",
+            status: "Delivery",
+          },
         ])
-
         setLoading(false)
       })
   }
@@ -121,20 +160,20 @@ const OrderOnlineList = () => {
         setStatusList(data)
         setLoading(false)
       })
-      .catch((err) => {
-        console.log(err, "err")
+      .catch(() => {
+        // console.log(err, "err")
         setLoading(false)
       })
   }
 
   useEffect(() => {
-    loadContact()
+    loadOrder()
     loadSalesChannel()
   }, [])
 
   const handleChange = (page, pageSize = 10) => {
     setCurrentPage(page)
-    loadContact(`/api/order-manual/?page=${page}`, pageSize, {
+    loadOrder(`/api/order-manual/?page=${page}`, pageSize, {
       search,
       page,
       ...filterData,
@@ -143,12 +182,12 @@ const OrderOnlineList = () => {
 
   const handleChangeSearch = () => {
     setIsSearch(true)
-    loadContact(`/api/order-manual`, 10, { search })
+    loadOrder(`/api/order-manual`, 10, { search })
   }
 
   const handleFilter = (data) => {
     setFilterData(data)
-    loadContact(`/api/order-manual`, 10, data)
+    loadOrder(`/api/order-manual`, 10, data)
   }
 
   const handleGetUid = () => {
@@ -157,9 +196,10 @@ const OrderOnlineList = () => {
       .get("/api/order-manual/uid/get")
       .then((res) => {
         setUidLoading(false)
-        return navigate("/order/order-manual/form/" + res.data.data)
+        // return navigate("/order-online/form/" + res.data.data)
+        return navigate("/order-online/form")
       })
-      .catch((err) => setUidLoading(false))
+      .catch(() => setUidLoading(false))
   }
 
   const handleExportContent = () => {
@@ -172,101 +212,14 @@ const OrderOnlineList = () => {
         window.open(data)
         setLoadingExport(false)
       })
-      .catch((e) => setLoadingExport(false))
-  }
-
-  const handleSubmitGp = (value) => {
-    setLoadingSubmit(true)
-    const hasLocNode = selectedProducts.every((item) => item.loc_node)
-    if (!hasLocNode) {
-      toast.error("Lokasi Site ID harus diisi")
-      return setLoadingSubmit(false)
-    }
-    axios
-      .post(`/api/order/order-lead/submit`, {
-        ids: selectedRowKeys,
-        type: "order-manual",
-        ...value,
-        products: selectedProducts,
-      })
-      .then((res) => {
-        const { data } = res.data
-        toast.success("Order Lead berhasil di submit")
-        setReadyToSubmit(false)
-        setSelectedRowKeys([])
-        setSelectedProducts([])
-        setLoadingSubmit(false)
-      })
-      .catch((e) => {
-        setLoadingSubmit(false)
-        toast.error("Error submitting order lead")
-      })
-  }
-
-  // selected row handler
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (e) => {
-      setSelectedRowKeys(e)
-      const productData = []
-      if (e.length > 0) {
-        e.map((value) => {
-          const item = orderList.find((item) => item.id == value)
-          if (item) {
-            const products = item?.product_needs.map((row, index) => {
-              return {
-                key: index,
-                id: row.id,
-                so_id: item.id,
-                product_name: row.product_name,
-                sku: row.product.sku,
-              }
-            })
-            productData.push(...products)
-          }
-        })
-      }
-
-      return setSelectedProducts(productData)
-    },
-    getCheckboxProps: (record) => {
-      if (record.status == "New") {
-        return {
-          disabled: true,
-        }
-      }
-
-      if (record.status_submit === "submited") {
-        return {
-          disabled: true,
-        }
-      }
-
-      return {
-        disabled: false,
-      }
-    },
-  }
-
-  const handleChangeProduct = (e, index) => {
-    const data = [...selectedProducts]
-    data[index].loc_node = e
-    setSelectedProducts(data)
+      .catch(() => setLoadingExport(false))
   }
 
   const rightContent = (
     <div className="flex justify-between items-center">
-      {selectedRowKeys.length > 0 && (
-        <ModalTax
-          handleSubmit={(e) => handleSubmitGp(e)}
-          products={selectedProducts}
-          onChange={handleChangeProduct}
-        />
-      )}
-
       <FilterModal handleOk={handleFilter} />
       <button
-        className="ml-3 text-white bg-green-500 hover:bg-green-500 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center mr-2"
+        className="ml-3 text-white bg-green-500 hover:bg-green-500/50 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center mr-2"
         onClick={() => handleExportContent()}
       >
         {loadingExport ? <LoadingOutlined /> : <FileExcelOutlined />}
@@ -274,8 +227,8 @@ const OrderOnlineList = () => {
       </button>
 
       <button
-        onClick={() => handleGetUid()}
-        className="text-white bg-blueColor hover:bg-blueColor focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center ml-2"
+        onClick={handleGetUid}
+        className="text-white bg-blueColor hover:bg-blueColor/50 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center ml-2"
       >
         {uidLoading ? <LoadingOutlined /> : <PlusOutlined />}
         <span className="ml-2">Tambah Data</span>
@@ -297,7 +250,7 @@ const OrderOnlineList = () => {
                 onClick={() => {
                   const params = { ...filterData, sales_channel: item.value }
                   setSelectedStatus(item.value)
-                  loadContact(`/api/order-manual`, 10, {
+                  loadOrder(`/api/order-manual`, 10, {
                     search,
                     ...params,
                   })
@@ -365,7 +318,7 @@ const OrderOnlineList = () => {
               isSearch ? (
                 <CloseCircleFilled
                   onClick={() => {
-                    loadContact()
+                    loadOrder()
                     setSearch(null)
                     setIsSearch(false)
                   }}
@@ -389,7 +342,6 @@ const OrderOnlineList = () => {
         columns={orderOnlineListColumn}
         loading={loading}
         pagination={false}
-        rowKey="id"
         scroll={{ x: "max-content" }}
         tableLayout={"auto"}
         rowSelection={rowSelection}
