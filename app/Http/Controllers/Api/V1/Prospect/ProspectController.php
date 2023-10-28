@@ -567,10 +567,10 @@ class ProspectController extends Controller
             ]);
         } else {
             $data = [
-                ['name' => 'All', 'tag' => 'all', 'count' => Prospect::where('created_by', auth()->user()->id)->count()],
-                ['name' => '🔥 Hot', 'tag' => 'hot', 'count' => Prospect::where('created_by', auth()->user()->id)->where('tag', 'hot')->count()],
-                ['name' => '❄️ Cold', 'tag' => 'cold', 'count' => Prospect::where('created_by', auth()->user()->id)->where('tag', 'cold')->count()],
-                ['name' => '🌤 Warm', 'tag' => 'warm', 'count' => Prospect::where('created_by', auth()->user()->id)->where('tag', 'warm')->count()],
+                ['name' => 'All', 'tag' => 'all', 'count' => Prospect::where('created_by', auth()->user()->id)->orWhere('async_to', auth()->user()->id)->count()],
+                ['name' => '🔥 Hot', 'tag' => 'hot', 'count' => Prospect::where('created_by', auth()->user()->id)->orWhere('async_to', auth()->user()->id)->where('tag', 'hot')->count()],
+                ['name' => '❄️ Cold', 'tag' => 'cold', 'count' => Prospect::where('created_by', auth()->user()->id)->orWhere('async_to', auth()->user()->id)->where('tag', 'cold')->count()],
+                ['name' => '🌤 Warm', 'tag' => 'warm', 'count' => Prospect::where('created_by', auth()->user()->id)->orWhere('async_to', auth()->user()->id)->where('tag', 'warm')->count()],
             ];
 
             return response()->json([

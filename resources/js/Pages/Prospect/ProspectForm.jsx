@@ -303,7 +303,7 @@ const ProspectForm = () => {
 
               if (prospect_id) {
                 axios
-                  .post("/api/prospect/activity/create/", newFormData)
+                  .post("/api/prospect/activity/create", newFormData)
                   .then((res) => {
                     toast.success(res.data.message, {
                       position: toast.POSITION.TOP_RIGHT,
