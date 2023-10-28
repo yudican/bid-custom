@@ -448,7 +448,7 @@ class ProspectController extends Controller
     public function updatedProspect(Request $request, $id)
     {
         $validate = [
-            'contact' => 'required',
+            // 'contact' => 'required',
             'status' => 'required',
             'tag' => 'required',
         ];
@@ -476,7 +476,7 @@ class ProspectController extends Controller
             DB::beginTransaction();
 
             $data = [
-                'contact' => $request->contact,
+                // 'contact' => $request->contact,
                 'status' => $request->status,
                 'tag' => $request->tag,
             ];
