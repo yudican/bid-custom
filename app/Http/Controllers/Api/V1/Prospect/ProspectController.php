@@ -220,6 +220,7 @@ class ProspectController extends Controller
                 'async_to' => $request->async_to,
             ];
 
+<<<<<<< HEAD
 
             $prospect = Prospect::updateOrCreate(['uuid' => $request->prospect_id], $data);
 
@@ -261,6 +262,32 @@ class ProspectController extends Controller
                             //     $data['attachment'] = getImage($attachment);
                             // }
 
+=======
+            $prospect = Prospect::updateOrCreate(['uuid' => $request->prospect_id], $data);
+
+            if (!$request->prospect_id) {
+                if ($request->items) {
+                    $items = $request->items;
+                    if (is_array($items) && count($items) > 0) {
+                        foreach ($items as $key => $item) {
+                            $dataProspect = [
+                                'uuid' => Uuid::uuid4(),
+                                'prospect_id' => $prospect->id,
+                                'notes' => isset($item['notes']) ? $item['notes'] : null,
+                                'status' => isset($item['status']) ? $item['status'] : 'new',
+                                'submit_date' => $item['submit_date'] ?? Carbon::now(),
+                            ];
+
+                            // $attachment = null;
+                            // if ($item['attachment']) {
+                            //     $attachment = $this->uploadImage($item, 'attachment');
+                            // }
+
+                            // if ($attachment) {
+                            //     $data['attachment'] = getImage($attachment);
+                            // }
+
+>>>>>>> origin/master
                             ProspectActivity::create($dataProspect);
                         }
                     }
