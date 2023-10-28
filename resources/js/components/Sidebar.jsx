@@ -252,7 +252,7 @@ const Sidebar = () => {
                       <i className={value?.icon || "fas fa-layer-group"}></i>
                     }
                     key={value?.key}
-                    title={value?.label}
+                    title={<span className="font-normal">{value?.label}</span>}
                   >
                     {value.children.map((children) => {
                       return (
@@ -263,7 +263,9 @@ const Sidebar = () => {
                             count={children?.badge}
                             offset={children?.badge > 99 ? null : [16, 0]}
                           >
-                            <a href={children?.url}>{children?.label}</a>
+                            <a className="font-normal" href={children?.url}>
+                              {children?.label}
+                            </a>
                           </Badge>
                         </Menu.Item>
                       )
@@ -276,7 +278,7 @@ const Sidebar = () => {
                   <Badge count={value?.badge} offset={[16, 0]}>
                     <a href={value.url}>
                       <i className={value?.icon || "fas fa-layer-group"}></i>
-                      <span className="ml-2">{value?.label}</span>
+                      <span className="ml-2 font-normal">{value?.label}</span>
                     </a>
                   </Badge>
                 </Menu.Item>

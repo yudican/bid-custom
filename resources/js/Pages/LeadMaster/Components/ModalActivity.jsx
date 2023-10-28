@@ -1,12 +1,12 @@
-import { EditOutlined, LoadingOutlined, PlusOutlined } from "@ant-design/icons";
-import { DatePicker, Form, Input, Modal, Upload } from "antd";
-import { useForm } from "antd/es/form/Form";
-import TextArea from "antd/lib/input/TextArea";
-import React, { useState } from "react";
-import { toast } from "react-toastify";
-import { getBase64 } from "../../../helpers";
+import { EditOutlined, LoadingOutlined, PlusOutlined } from "@ant-design/icons"
+import { DatePicker, Form, Input, Modal, Upload } from "antd"
+import { useForm } from "antd/es/form/Form"
+import TextArea from "antd/lib/input/TextArea"
+import React, { useState } from "react"
+import { toast } from "react-toastify"
+import { getBase64 } from "../../../helpers"
 
-import "../../../index.css";
+import "../../../index.css"
 
 const ModalActivity = ({
   refetch,
@@ -14,96 +14,96 @@ const ModalActivity = ({
   initialValues = {},
   update = false,
 }) => {
-  const [form] = useForm();
-  const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [form] = useForm()
+  const [loadingSubmit, setLoadingSubmit] = useState(false)
   const [loading, setLoading] = useState({
     attachment: false,
-  });
+  })
 
   const [imageUrl, setImageUrl] = useState({
     attachment: null,
-  });
+  })
 
   const [fileList, setFileList] = useState({
     attachment: null,
-  });
+  })
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const showModal = () => {
-    setIsModalOpen(true);
-  };
+    setIsModalOpen(true)
+  }
 
   const handleCancel = () => {
-    setIsModalOpen(false);
-  };
+    setIsModalOpen(false)
+  }
 
   const handleChange = ({ fileList, field }) => {
-    const list = fileList.pop();
-    setLoading({ ...loading, [field]: true });
+    const list = fileList.pop()
+    setLoading({ ...loading, [field]: true })
     setTimeout(() => {
       getBase64(list.originFileObj, (url) => {
-        setLoading({ ...loading, [field]: false });
-        setImageUrl({ ...imageUrl, [field]: url });
-      });
-      setFileList({ ...fileList, [field]: list.originFileObj });
-    }, 1000);
-  };
+        setLoading({ ...loading, [field]: false })
+        setImageUrl({ ...imageUrl, [field]: url })
+      })
+      setFileList({ ...fileList, [field]: list.originFileObj })
+    }, 1000)
+  }
 
   const onFinish = (value) => {
-    setLoadingSubmit(true);
-    let formData = new FormData();
+    setLoadingSubmit(true)
+    let formData = new FormData()
 
     if (fileList.attachment) {
-      formData.append("attachment", fileList.attachment);
+      formData.append("attachment", fileList.attachment)
     }
 
-    formData.append("uid_lead", detail.uid_lead);
-    formData.append("title", value.title);
-    formData.append("description", value.description ?? "-");
-    formData.append("latitude", coorData?.lat ?? 0);
-    formData.append("longitude", coorData?.lng ?? 0);
-    formData.append("address_name", address ?? "-");
+    formData.append("uid_lead", detail.uid_lead)
+    formData.append("title", value.title)
+    formData.append("description", value.description ?? "-")
+    formData.append("latitude", coorData?.lat ?? 0)
+    formData.append("longitude", coorData?.lng ?? 0)
+    formData.append("address_name", address ?? "-")
     formData.append(
       "start_date",
       value.start_date.format("YYYY-MM-DD HH:mm:ss")
-    );
-    formData.append("end_date", value.end_date.format("YYYY-MM-DD HH:mm:ss"));
-    formData.append("result", value.result ?? "-");
-    let url = `/api/lead-master/activity/create`;
+    )
+    formData.append("end_date", value.end_date.format("YYYY-MM-DD HH:mm:ss"))
+    formData.append("result", value.result ?? "-")
+    let url = `/api/lead-master/activity/create`
     if (initialValues?.id) {
-      url = `/api/lead-master/activity/update/${initialValues?.id}`;
+      url = `/api/lead-master/activity/update/${initialValues?.id}`
     }
     axios
       .post(url, formData)
       .then((res) => {
-        const { message } = res.data;
-        refetch();
+        const { message } = res.data
+        refetch()
         setFileList({
           attachment: null,
-        });
+        })
         setImageUrl({
           attachment: null,
-        });
+        })
         toast.success(message, {
           position: toast.POSITION.TOP_RIGHT,
-        });
-        setIsModalOpen(false);
-        setLoadingSubmit(false);
-        form.resetFields();
+        })
+        setIsModalOpen(false)
+        setLoadingSubmit(false)
+        form.resetFields()
       })
       .catch((error) => {
-        const { message } = error.response.data;
+        const { message } = error.response.data
         toast.error(message, {
           position: toast.POSITION.TOP_RIGHT,
-        });
-        setLoadingSubmit(false);
-      });
-  };
+        })
+        setLoadingSubmit(false)
+      })
+  }
 
   // handle geolocation
-  const [address, setAddress] = useState("");
-  const [coorData, setCoorData] = useState({});
+  const [address, setAddress] = useState("")
+  const [coorData, setCoorData] = useState({})
   // const handleSelectAddress = (address) => {
   //   geocodeByAddress(address)
   //     .then((results) => getLatLng(results[0]))
@@ -143,7 +143,7 @@ const ModalActivity = ({
         title={update ? "Edit Activity" : "Tambah Activity"}
         open={isModalOpen}
         onOk={() => {
-          form.submit();
+          form.submit()
         }}
         cancelText={"Cancel"}
         onCancel={handleCancel}
@@ -312,7 +312,7 @@ const ModalActivity = ({
         </Form>
       </Modal>
     </div>
-  );
-};
+  )
+}
 
-export default ModalActivity;
+export default ModalActivity

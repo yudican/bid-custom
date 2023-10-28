@@ -1,7 +1,11 @@
 import { SearchOutlined } from "@ant-design/icons"
 import { Input, Modal, Tag, Tooltip } from "antd"
 import React, { useState } from "react"
-import { inArray, capitalizeString } from "../../helpers"
+import { capitalizeString, inArray } from "../../helpers"
+
+export const typeWordingChange = (type) => {
+  return type === "product" ? "Item" : type
+}
 
 const ModalProduct = ({
   products,
@@ -9,13 +13,14 @@ const ModalProduct = ({
   value,
   disabled = false,
   type = "product",
+  stock = "final_stock",
 }) => {
   const [isModalProductListVisible, setIsModalProductListVisible] =
     useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [search, setSearch] = useState("")
 
-  products.sort((a, b) => b.final_stock - a.final_stock)
+  products.sort((a, b) => b[stock] - a[stock])
 
   const title = products?.find((product) => product?.id === value)?.name
   const filteredProducts =
@@ -27,7 +32,11 @@ const ModalProduct = ({
       {disabled ? (
         <div className="w-96 flex items-center border py-1 px-2 rounded-sm line-clamp-1 cursor-pointer">
           <SearchOutlined className="mr-2" />
-          <span>{value ? title : `Pilih ${capitalizeString(type)}`}</span>
+          <span>
+            {value
+              ? title
+              : `Pilih ${capitalizeString(typeWordingChange(type))}`}
+          </span>
         </div>
       ) : (
         <Tooltip title={title}>
@@ -36,13 +45,17 @@ const ModalProduct = ({
             onClick={() => setIsModalProductListVisible(true)}
           >
             <SearchOutlined className="mr-2" />
-            <span>{value ? title : `Pilih ${capitalizeString(type)}`}</span>
+            <span>
+              {value
+                ? title
+                : `Pilih ${capitalizeString(typeWordingChange(type))}`}
+            </span>
           </div>
         </Tooltip>
       )}
 
       <Modal
-        title={`Daftar ${capitalizeString(type)}`}
+        title={`Daftar ${capitalizeString(typeWordingChange(type))}`}
         open={isModalProductListVisible}
         cancelText={"Batal"}
         okText={"Pilih"}
@@ -75,7 +88,10 @@ const ModalProduct = ({
                 }
               `}
               onClick={() => {
-                setSelectedProduct(product.id)
+                if (inArray(type, ["product"])) {
+                  return setSelectedProduct(product.id)
+                }
+                product[stock] > 0 && setSelectedProduct(product.id)
               }}
               // disabled={product.stock === 0}
             >
@@ -84,7 +100,7 @@ const ModalProduct = ({
                   <img
                     src={product.image_url}
                     alt="product_photo"
-                    className="mr-4 w-20 h-20 rounded-md border"
+                    className={`mr-4 w-20 h-20 rounded-md border`}
                   />
                   <div>
                     <div className="block text-lg line-clamp-1 font-medium max-w-2xl">
@@ -101,9 +117,9 @@ const ModalProduct = ({
                     </div>
                   </div>
                 </div>
-                {/* {product.final_stock && ( */}
-                <div className="block text-red-500">
-                  Stock Tersedia: {product.final_stock}
+                {/* {product[stock] && ( */}
+                <div className={`block text-red-500`}>
+                  Stock Tersedia: {product[stock]}
                 </div>
                 {/* )} */}
                 {inArray(type, ["pengemasan", "perlengkapan"]) && (

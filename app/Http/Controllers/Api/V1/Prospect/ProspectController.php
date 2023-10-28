@@ -19,6 +19,7 @@ class ProspectController extends Controller
     {
         return view('spa.spa-index');
     }
+
     // index
     public function index(Request $request)
     {
@@ -26,7 +27,12 @@ class ProspectController extends Controller
         $user = auth()->user();
         if (in_array($user->role->role_type, ['superadmin', 'admin', 'adminsales'])) {
         } else {
-            $prospect->where('created_by', $user->id);
+            $user = auth()->user();
+            if ($user->role->role_type == 'cs') {
+                $prospect->where('async_to', $user->id)->orWhere('created_by', $user->id);
+            } else {
+                $prospect->where('created_by', $user->id);
+            }
         }
 
         if ($request->query('status')) {
@@ -211,36 +217,55 @@ class ProspectController extends Controller
                 'created_by' => auth()->user()->id,
                 'status' => 'new',
                 'tag' => $request->tag,
+                'async_to' => $request->async_to,
             ];
 
-            $prospect = Prospect::create($data);
 
-            if ($request->items) {
-                $items = $request->items;
-                if (is_array($items) && count($items) > 0) {
-                    foreach ($items as $key => $item) {
-                        $dataProspect = [
-                            'uuid' => Uuid::uuid4(),
-                            'prospect_id' => $prospect->id,
-                            'notes' => isset($item['notes']) ? $item['notes'] : null,
-                            'status' => isset($item['status']) ? $item['status'] : 'new',
-                            'submit_date' => $item['submit_date'] ?? Carbon::now(),
-                        ];
+            $prospect = Prospect::updateOrCreate(['uuid' => $request->prospect_id], $data);
 
-                        // $attachment = null;
-                        // if ($item['attachment']) {
-                        //     $attachment = $this->uploadImage($item, 'attachment');
-                        // }
+            if (!$request->prospect_id) {
+                if ($request->items) {
+                    $items = $request->items;
+                    if (is_array($items) && count($items) > 0) {
+                        foreach ($items as $key => $item) {
+                            $dataProspect = [
+                                'uuid' => Uuid::uuid4(),
+                                'prospect_id' => $prospect->id,
+                                'notes' => isset($item['notes']) ? $item['notes'] : null,
+                                'status' => isset($item['status']) ? $item['status'] : 'new',
+                                'submit_date' => $item['submit_date'] ?? Carbon::now(),
+                            ];
 
-                        // if ($attachment) {
-                        //     $data['attachment'] = getImage($attachment);
-                        // }
+                            if (count($items) <= 4) {
+                                $prospect->update([
+                                    'tag' => 'cold',
+                                    'status' => 'new'
+                                ]);
+                            } else if (count($items) > 6) {
+                                $prospect->update([
+                                    'tag' => 'hot',
+                                    'status' => 'closed'
+                                ]);
+                            } else if (count($items) > 4 && count($items) < 7) {
+                                $prospect->update([
+                                    'tag' => 'warm',
+                                    'status' => 'onprogress'
+                                ]);
+                            }
+                            // $attachment = null;
+                            // if ($item['attachment']) {
+                            //     $attachment = $this->uploadImage($item, 'attachment');
+                            // }
 
-                        ProspectActivity::create($dataProspect);
+                            // if ($attachment) {
+                            //     $data['attachment'] = getImage($attachment);
+                            // }
+
+                            ProspectActivity::create($dataProspect);
+                        }
                     }
                 }
             }
-
 
             DB::commit();
             return response()->json([
@@ -314,22 +339,23 @@ class ProspectController extends Controller
             DB::beginTransaction();
             $prospect = Prospect::find($request->prospect_id);
             $count = $prospect->activities()->count();
-            if ($count <= 4) {
+            if ($count < 4) {
                 $prospect->update([
                     'tag' => 'cold',
-                    'status' => 'onprogress'
+                    'status' => 'new'
                 ]);
-            } else if ($count == 6) {
+            } else if ($count > 5) {
                 $prospect->update([
                     'tag' => 'hot',
                     'status' => 'closed'
                 ]);
-            } else if ($count == 5) {
+            } else if ($count > 3 && $count < 6) {
                 $prospect->update([
                     'tag' => 'warm',
                     'status' => 'onprogress'
                 ]);
             }
+
             $data = [
                 'uuid' => Uuid::uuid4(),
                 'prospect_id' => $request->prospect_id,
@@ -342,13 +368,14 @@ class ProspectController extends Controller
                 $data['attachment'] = getImage($attachment);
             }
 
-            $prospect = ProspectActivity::create($data);
+            ProspectActivity::create($data);
 
 
             DB::commit();
             return response()->json([
                 'message' => 'Successfully add prospect Activity',
-                'data' => $prospect
+                'data' => $prospect,
+                'count' => $count
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -406,13 +433,13 @@ class ProspectController extends Controller
 
             DB::commit();
             return response()->json([
-                'message' => 'Successfully add prospect Activity',
+                'message' => 'Successfully update prospect Activity',
                 'data' => $prospect
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Error add prospect Activity',
+                'message' => 'Error update prospect Activity',
                 'data' => []
             ], 400);
         }

@@ -60,7 +60,7 @@ function sumPriceTotal(array) {
 }
 
 // export fuction format number indonesia
-function formatNumber(number, prefix = null) {
+function formatNumber(number, prefix = null, defaultValue = 0) {
   // change number format it's number greater than 0
   if (number > 0) {
     const format = parseInt(number)
@@ -71,7 +71,7 @@ function formatNumber(number, prefix = null) {
     }
     return format
   } else {
-    return 0
+    return defaultValue
   }
 }
 
@@ -266,6 +266,37 @@ const handleString = (string) => {
   }
 }
 
+const prospectStatusColor = (status) => {
+  switch (status) {
+    case "new":
+      return "rgba(123, 97, 255, 1)"
+
+    case "closed":
+      return "rgba(36, 132, 86, 1)"
+
+    default:
+      return "#0099CC"
+  }
+}
+
+function getInitials(fullName) {
+  const names = fullName.split(" ")
+  let initials = ""
+
+  for (let i = 0; i < names.length; i++) {
+    initials += names[i][0]
+  }
+
+  return initials
+}
+
+function paginateData(data, currentPage, pageSize) {
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedData = data.slice(startIndex, endIndex)
+  return paginatedData
+}
+
 export {
   getBase64,
   beforeUpload,
@@ -290,4 +321,7 @@ export {
   handleString,
   capitalizeString,
   capitalizeEachWord,
+  prospectStatusColor,
+  getInitials,
+  paginateData,
 }

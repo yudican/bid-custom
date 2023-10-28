@@ -266,12 +266,12 @@
                         <div class="info">
                             <a href="{{ url('/profile') }}">
                                 <span>
-                                    {{Auth::user()->name}}
+                                    {{Auth::user()->name}}   
                                     <span class="user-level">{{Auth::user()->role->role_name}}
-                                        <span class="navbar-toggler-icon">
-                                            <i class="icon-settings"></i>
-                                        </span>
+                                    <span class="navbar-toggler-icon">
+                                        <i class="icon-settings"></i>
                                     </span>
+                                </span>
                             </a>
                         </div>
                     </div>

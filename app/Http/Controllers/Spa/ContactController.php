@@ -119,6 +119,7 @@ class ContactController extends Controller
         }
         $total_debt = $total_order_lead + $total_order_manual;
 
+
         return response()->json([
             'status' => 'success',
             'data' => $contact,
@@ -294,13 +295,23 @@ class ContactController extends Controller
             }
         }
 
+        $sequenceNumber = $request->initialName . date('-Y') . '001';
+        $latestProspect = User::where('uid', $sequenceNumber)->latest()->first();
+
+        $uid = $sequenceNumber;
+        if ($latestProspect) {
+            $number = explode('-', $latestProspect->uid);
+            $sequenceNumber = (int)substr($number[1], -3) + 1;
+            $uid = $request->initialName . '-' . $sequenceNumber;
+        }
+
         try {
             DB::beginTransaction();
             $role = Role::find($request->role_id);
             $sales_channel = json_decode($request->sales_channel, true);
             $user = User::updateOrCreate(['id'  => $request->user_id], [
                 'name'  => $request->name,
-                'uid' => $request->uid,
+                'uid' => $request->user_id ? $request->uid : $uid,
                 'email'  => $request->email,
                 'password'  => Hash::make('admin123'),
                 'telepon'  => formatPhone($request->telepon),

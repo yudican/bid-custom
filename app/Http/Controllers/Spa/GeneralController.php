@@ -78,11 +78,9 @@ class GeneralController extends Controller
             $user_list->where('name', 'like', '%' . $request->search . '%');
         }
 
-        if (in_array($role, ['sales', 'leadcs'])) {
-            $user_list->whereHas('roles', function ($query) {
-                $query->whereIn('role_type', ['mitra', 'member', 'subagent']);
-            });
-        }
+        $user_list->whereHas('roles', function ($query) use ($request) {
+            $query->whereIn('role_type', $request->role_type ?? ['member']);
+        });
 
         $userData = $user_list->limit($request->limit ?? 5)->get()->map(function ($item) {
             return [
@@ -90,6 +88,7 @@ class GeneralController extends Controller
                 'nama' => $item->name . ' - ' . $item->role?->role_name
             ];
         });
+
 
         return response()->json([
             'status' => 'success',

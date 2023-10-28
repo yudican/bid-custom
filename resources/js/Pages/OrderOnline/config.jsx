@@ -1,25 +1,26 @@
 import {
-  CheckOutlined,
   CloseOutlined,
+  DeleteFilled,
   EditFilled,
   EyeOutlined,
   RightOutlined,
 } from "@ant-design/icons"
-import { Badge, Dropdown, Menu, message } from "antd"
+import { Dropdown, Menu, Steps, Tag, Tooltip, message } from "antd"
 import axios from "axios"
+import moment from "moment"
 import React from "react"
 import { useNavigate } from "react-router-dom"
-import {
-  capitalizeString,
-  formatDate,
-  formatNumber,
-  prospectStatusColor,
-} from "../../helpers"
+import { formatDate, formatNumber, inArray } from "../../helpers"
 
 const getStatusItems = (status) => {
   switch (status) {
-    case "Draft":
+    case "New Order":
       return [
+        {
+          label: "Ubah",
+          key: "update",
+          icon: <EditFilled />,
+        },
         {
           label: "Detail",
           key: "detail",
@@ -36,45 +37,20 @@ const getStatusItems = (status) => {
               icon: <EyeOutlined />,
             },
           ],
-        },
-        {
-          label: "Ubah",
-          key: "update",
-          icon: <EditFilled />,
-        },
-      ]
-    case "New":
-      return [
-        {
-          label: "Detail",
-          key: "detail",
-          icon: <EyeOutlined />,
-          children: [
-            {
-              label: "Open Directly",
-              key: "detail",
-              icon: <EyeOutlined />,
-            },
-            {
-              label: "Open In New Tab",
-              key: "detail_new_tab",
-              icon: <EyeOutlined />,
-            },
-          ],
-        },
-        {
-          label: "Ubah",
-          key: "update",
-          icon: <EditFilled />,
         },
         {
           label: "Cancel",
           key: "cancel",
-          icon: <CloseOutlined />,
+          icon: <DeleteFilled />,
         },
       ]
-    case "Open":
+    case "Packing":
       return [
+        {
+          label: "Ubah",
+          key: "update",
+          icon: <EditFilled />,
+        },
         {
           label: "Detail",
           key: "detail",
@@ -92,43 +68,13 @@ const getStatusItems = (status) => {
             },
           ],
         },
-        // {
-        //     label: "Ubah",
-        //     key: "update",
-        //     icon: <EditFilled />,
-        // },
-        // {
-        //     label: "Approve",
-        //     key: "approve",
-        //     icon: <CheckOutlined />,
-        // },
-        // {
-        //   label: "Cancel",
-        //   key: "cancel",
-        //   icon: <CloseOutlined />,
-        // },
+        {
+          label: "Cancel",
+          key: "cancel",
+          icon: <DeleteFilled />,
+        },
       ]
 
-    case "Closed":
-      return [
-        {
-          label: "Detail",
-          key: "detail",
-          icon: <EyeOutlined />,
-          children: [
-            {
-              label: "Open Directly",
-              key: "detail",
-              icon: <EyeOutlined />,
-            },
-            {
-              label: "Open In New Tab",
-              key: "detail_new_tab",
-              icon: <EyeOutlined />,
-            },
-          ],
-        },
-      ]
     default:
       return [
         {
@@ -154,25 +100,28 @@ const getStatusItems = (status) => {
 
 const ActionMenu = ({ value, status = 1 }) => {
   const navigate = useNavigate()
+  console.log(value, status)
 
   return (
     <Menu
       onClick={({ key }) => {
         switch (key) {
           case "detail":
-            navigate(`/prospect/detail/${value}`)
+            navigate(`/order/order-manual/detail/${value}`)
             break
           case "detail_new_tab":
-            window.open(`/prospect/detail/${value}`)
+            window.open(`/order/order-manual/detail/${value}`)
             break
           case "update":
-            navigate(`/prospect/form/${value}`)
+            navigate(`/order/order-manual/form/${value}`)
             break
           case "cancel":
-            return axios.get(`/api/prospect/cancel/${value}`).then((res) => {
-              message.success("Order Lead berhasil di cancel")
-              window.location.reload()
-            })
+            return axios
+              .get(`/api/order-manual/cancel/${value}`)
+              .then((res) => {
+                message.success("Order Lead berhasil di cancel")
+                window.location.reload()
+              })
         }
       }}
       itemIcon={<RightOutlined />}
@@ -181,52 +130,33 @@ const ActionMenu = ({ value, status = 1 }) => {
   )
 }
 
-const prospectListColumn = [
+const orderOnlineListColumn = [
   {
     title: "No.",
-    dataIndex: "id",
-    key: "id",
-    render: (value, row, index) => index + 1,
+    dataIndex: "key",
+    key: "key",
+    // render: (value, row, index) => index + 1,
   },
   {
-    title: "Prospect Number",
-    dataIndex: "prospect_number",
-    key: "prospect_number",
+    title: "Order ID",
+    dataIndex: "order_id",
+    key: "order_id",
   },
   {
     title: "Contact",
-    dataIndex: "contact_name",
-    key: "contact_name",
+    dataIndex: "contact",
+    key: "contact",
   },
   {
-    title: "Status",
-    dataIndex: "status",
-    key: "status",
-    render: (text) => {
-      return (
-        <Badge
-          count={text === "onprogress" ? "On Progress" : capitalizeString(text)}
-          color={prospectStatusColor(text)}
-        />
-      )
-    },
-  },
-  {
-    title: "Activity",
-    dataIndex: "activity_total",
-    key: "activity_total",
-  },
-  {
-    title: "Tag",
-    dataIndex: "tag_name",
-    key: "tag_name",
+    title: "Created By",
+    dataIndex: "created_by",
+    key: "created_by",
   },
   {
     title: "Created On",
-    dataIndex: "created_at",
-    key: "created_at",
-    render: (text, record) => {
-      console.log(record, "created_on")
+    dataIndex: "created_on",
+    key: "created_on",
+    render: (text) => {
       if (text) {
         return formatDate(text)
       }
@@ -234,20 +164,60 @@ const prospectListColumn = [
     },
   },
   {
+    title: "Nominal",
+    dataIndex: "amount_total",
+    key: "amount_total",
+    render: (text) => `Rp. ${formatNumber(text)}`,
+  },
+  {
+    title: "Payment Method",
+    dataIndex: "payment_method",
+    key: "payment_method",
+  },
+  {
+    title: "Status",
+    dataIndex: "status",
+    key: "status",
+    render: (text) => {
+      const statusSwitch = (text) => {
+        switch (text) {
+          case "New Order":
+            return "#FF6600"
+          case "Packing":
+            return "#7B61FF"
+          case "Delivery":
+            return "#008BE1"
+          case "Completed":
+            return "#43936C"
+          case "Cancelled":
+            return "#CB3A31"
+          default:
+            return "black"
+        }
+      }
+
+      return (
+        <span style={{ color: statusSwitch(text) }} className="font-semibold">
+          {text}
+        </span>
+      )
+    },
+  },
+  {
     title: "Action",
-    key: "id",
     align: "center",
     fixed: "right",
     width: 100,
-    render: (text) => (
-      <Dropdown.Button
-        style={{
-          left: -16,
-        }}
-        // icon={<MoreOutlined />}
-        overlay={<ActionMenu value={text.uuid} status={text.status} />}
-      ></Dropdown.Button>
-    ),
+    render: (text, record) => {
+      return (
+        <Dropdown.Button
+          style={{
+            left: -16,
+          }}
+          overlay={<ActionMenu value={text.id} status={text.status} />}
+        ></Dropdown.Button>
+      )
+    },
   },
 ]
 
@@ -267,7 +237,7 @@ const productNeedListColumn = [
     key: "product",
   },
   {
-    title: "QTY",
+    title: "Qty",
     dataIndex: "qty",
     key: "qty",
   },
@@ -275,11 +245,67 @@ const productNeedListColumn = [
     title: "Normal Price",
     dataIndex: "price",
     key: "price",
+    render: (text) => formatNumber(text),
   },
   {
     title: "Nego Price",
     dataIndex: "final_price",
     key: "final_price",
+    render: (text) => formatNumber(text),
+  },
+  {
+    title: "Tax Amount",
+    dataIndex: "tax_amount",
+    key: "tax_amount",
+    render: (text) => formatNumber(text),
+  },
+]
+
+const trackingListColumn = [
+  {
+    title: "Time",
+    dataIndex: "created_at",
+    key: "created_at",
+    render: (text) => moment(text).format("ddd, DD MMM YYYY - LT"),
+  },
+  {
+    title: "Description",
+    dataIndex: "description",
+    key: "description",
+  },
+  {
+    title: "Status",
+    dataIndex: "status",
+    key: "status",
+    render: (text, record) => {
+      let dummyTrack = [record, record, record]
+      return (
+        <Tooltip
+          color="white"
+          overlayStyle={{ maxWidth: 800 }}
+          title={
+            <div>
+              <Steps progressDot direction="vertical" size="small" current={0}>
+                {dummyTrack.reverse().map((row, index) => {
+                  return (
+                    <Steps.Step
+                      style={{ color: "white" }}
+                      key={index}
+                      title={moment(row.created_at).format(
+                        "ddd, DD MMM YYYY - LT"
+                      )}
+                      subTitle={row.description}
+                    />
+                  )
+                })}
+              </Steps>
+            </div>
+          }
+        >
+          <span>{text}</span>
+        </Tooltip>
+      )
+    },
   },
 ]
 
@@ -288,6 +314,12 @@ const productNeedListColumnStep2 = columns.map((column) => {
     title: column,
     dataIndex: column.replace(/\s/g, "_").toLowerCase(),
     key: column.replace(/\s/g, "_").toLowerCase(),
+    render: (text) => {
+      if (inArray(column, ["Price", "Total Price", "Final Price"])) {
+        return formatNumber(text)
+      }
+      return text
+    },
   }
 })
 
@@ -446,6 +478,7 @@ const productListColumns = [
     title: "Price",
     dataIndex: "price",
     key: "price",
+    render: (text) => formatNumber(text),
   },
 
   {
@@ -467,11 +500,13 @@ const productListColumns = [
     title: "Subtotal",
     dataIndex: "total_price",
     key: "total_price",
+    render: (text) => formatNumber(text),
   },
   {
     title: "Total Price Nego",
     dataIndex: "price_nego",
     key: "price_nego",
+    render: (text) => formatNumber(text),
   },
   // {
   //   title: "Total Price Nego",
@@ -482,6 +517,7 @@ const productListColumns = [
     title: " Total Dpp + PPN",
     dataIndex: "final_price",
     key: "final_price",
+    render: (text) => formatNumber(text),
   },
   {
     title: "Action",
@@ -490,12 +526,117 @@ const productListColumns = [
   },
 ]
 
+const orderDeliveryColumns = [
+  {
+    title: "No.",
+    dataIndex: "id",
+    key: "id",
+    render: (text, record, index) => index + 1,
+  },
+  {
+    title: "SKU",
+    dataIndex: "sku",
+    key: "sku",
+  },
+  {
+    title: "Product Name",
+    dataIndex: "product",
+    key: "product",
+  },
+  {
+    title: "Qty",
+    dataIndex: "qty_delivered",
+    key: "qty_delivered",
+  },
+  {
+    title: "No Resi",
+    dataIndex: "resi",
+    key: "resi",
+    render: (text) => text || "-",
+  },
+  {
+    title: "Ekspedisi",
+    dataIndex: "courier",
+    key: "courier",
+    render: (text) => text || "-",
+  },
+  {
+    title: "Nama Pengirim",
+    dataIndex: "sender_name",
+    key: "sender_name",
+    render: (text) => text || "-",
+  },
+  {
+    title: "Telepon Pengirim",
+    dataIndex: "sender_phone",
+    key: "sender_phone",
+    render: (text) => text || "-",
+  },
+  {
+    title: "Status",
+    dataIndex: "status",
+    key: "status",
+  },
+  {
+    title: "Invoice Status",
+    dataIndex: "status",
+    key: "status",
+    render: (text, record) => {
+      if (record?.is_invoice == 1) {
+        return <Tag color="green">Invoiced</Tag>
+      }
+
+      return <Tag color="red">Not Invoiced</Tag>
+    },
+  },
+]
+
+const ethixColumns = [
+  {
+    title: "No.",
+    width: 100,
+    fixed: "left",
+    render: (text, record, index) => index + 1,
+  },
+  {
+    title: "SO Number",
+    dataIndex: "so_number",
+    key: "1",
+  },
+  {
+    title: "SKU",
+    dataIndex: "sku",
+    key: "2",
+  },
+  {
+    title: "Resi",
+    dataIndex: "awb_number",
+    key: "3",
+  },
+  {
+    title: "Status",
+    dataIndex: "status",
+    key: "4",
+  },
+  {
+    title: "Created On",
+    dataIndex: "created_at",
+    render: (text) => {
+      return formatDate(text)
+    },
+  },
+]
+
 export {
-  prospectListColumn,
+  activityColumns,
+  billingColumns,
+  ethixColumns,
+  getStatusItems,
+  negotiationsColumns,
+  orderDeliveryColumns,
+  orderOnlineListColumn,
+  productListColumns,
   productNeedListColumn,
   productNeedListColumnStep2,
-  billingColumns,
-  activityColumns,
-  negotiationsColumns,
-  productListColumns,
+  trackingListColumn,
 }

@@ -2,9 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\LogError;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,22 +10,19 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class PrintInvoice implements ShouldQueue
+class SendOrderTiktokGirafe implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    protected $data = [];
-    protected $task;
-
+    protected $order_id;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($data, $task)
+    public function __construct($order_id, $pdf_url)
     {
-        $this->data = $data;
-        $this->task = $task;
+        $this->order_id = $order_id;
+        $this->pdf_url = $pdf_url;
     }
 
     /**
@@ -40,24 +35,24 @@ class PrintInvoice implements ShouldQueue
         $seller_id = '7494769230760545061'; // from tiktok
         $apiKey = 'MJGEFLIUYEGLIEUF3487LKIHO';
         $client = new Client();
-        $data = $this->data;
         try {
-            $response = $client->request('POST', 'https://giraffe-v2.aimi.dev/api/tektok/label/merge?apikey=' . $apiKey, [
+            //label
+            $responseLabel = $client->request('POST', 'https://giraffe-v2.aimi.dev/api/tektok/label/generate?apikey=' . $apiKey,[
                 'headers' => [
                     'Content-Type' => 'application/json',
                 ],
                 'body' => json_encode([
                     'seller_id' => $seller_id,
-                    'data' => $data,
+                    'order_id' => $this->order_id,
+                    'pdf_url' => $this->pdf_url,
                 ]),
             ]);
-            $responseJSON = json_decode($response->getBody(), true);
-        } catch (ClientException $th) {
-            LogError::updateOrCreate(['id' => 1], [
-                'message' => $th->getMessage(),
-                'trace' => $th->getTraceAsString(),
-                'action' => 'Bulk Print',
-            ]);
+            
+            $responseLabelJSON = json_decode($responseLabel->getBody(), true);
+            setSetting('response_label_giraffe', json_encode($responseLabelJSON));
+            
+        } catch (\Throwable $th) {
+            setSetting('response_giraffe_error', $th->getMessage());
         }
     }
 }
