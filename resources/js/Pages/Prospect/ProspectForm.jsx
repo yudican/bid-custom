@@ -143,15 +143,18 @@ const ProspectForm = () => {
 
   const onFinish = (values) => {
     axios
-      .post(`/api/prospect/create`, {
-        ...values,
-        items: formListData,
-        status: "new",
-        tag: values.tag,
-        contact: values?.contact?.value,
-        async_to: values?.async_to?.value,
-        prospect_id: prospect_id,
-      })
+      .post(
+        `/api/prospect/${prospect_id ? `update/${prospect_id}` : "create"}`,
+        {
+          ...values,
+          items: formListData,
+          status: "new",
+          tag: values.tag,
+          contact: values?.contact?.value,
+          async_to: values?.async_to?.value,
+          prospect_id: prospect_id,
+        }
+      )
       .then((res) => {
         toast.success(res.data.message, {
           position: toast.POSITION.TOP_RIGHT,
@@ -186,10 +189,14 @@ const ProspectForm = () => {
         <Card
           title="Prospect Info"
           extra={
-            <button className="bg-green-400 hover:bg-green-400/50 p-2 rounded-lg text-white flex justify-center items-center">
+            <a
+              href={`wa.me/${detail?.contact_whatsapp}`}
+              target="_blank"
+              className="bg-green-400 hover:bg-green-400/50 p-2 rounded-lg text-white flex justify-center items-center"
+            >
               <img src={WaLogo} />
               <span className="ml-1">Chat Whatsapp</span>
-            </button>
+            </a>
           }
         >
           <div className="card-body">

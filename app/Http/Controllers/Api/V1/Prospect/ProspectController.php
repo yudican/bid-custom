@@ -342,7 +342,7 @@ class ProspectController extends Controller
             if ($count < 4) {
                 $prospect->update([
                     'tag' => 'cold',
-                    'status' => 'new'
+                    'status' => 'onprogress'
                 ]);
             } else if ($count > 5) {
                 $prospect->update([

@@ -17,7 +17,7 @@ class Prospect extends Model
         'status',
         'tag',
     ];
-    protected $appends = ['contact_name', 'contact_async_name', 'created_by_name', 'role_name', 'tag_name', 'activity_total', 'profile_photo_url'];
+    protected $appends = ['contact_name', 'contact_whatsapp', 'contact_async_name', 'created_by_name', 'role_name', 'tag_name', 'activity_total', 'profile_photo_url'];
 
     protected static function boot()
     {
@@ -64,6 +64,17 @@ class Prospect extends Model
 
         if ($user) {
             return $user->name;
+        }
+
+        return '-';
+    }
+
+    public function getContactWhatsappAttribute()
+    {
+        $user = User::find($this->contact, ['telepon']);
+
+        if ($user) {
+            return formatPhone($user->telepon);
         }
 
         return '-';
