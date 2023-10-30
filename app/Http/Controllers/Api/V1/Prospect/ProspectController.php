@@ -354,6 +354,11 @@ class ProspectController extends Controller
                     'tag' => 'warm',
                     'status' => 'onprogress'
                 ]);
+            } else if ($count == 0) {
+                $prospect->update([
+                    'tag' => 'cold',
+                    'status' => 'onprogress'
+                ]);
             }
 
             $data = [

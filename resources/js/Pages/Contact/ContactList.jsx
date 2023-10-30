@@ -27,6 +27,7 @@ const ContactList = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [filterData, setFilterData] = useState({})
   const [loadingExport, setLoadingExport] = useState(false)
+  const [selectedRoles, setSelectedRoles] = useState([])
 
   // const [isDarkMode, setIsDarkMode] = useState();
   // const { switcher, currentTheme, status, themes } = useThemeSwitcher();
@@ -61,7 +62,7 @@ const ContactList = () => {
             total_debt: formatNumber(contact?.amount_detail.total_debt),
           }
         })
-
+        setSelectedRoles(data.map((item) => item.role.role_type))
         setContacts(newData)
         setLoading(false)
       })
@@ -102,7 +103,7 @@ const ContactList = () => {
   }
   const rightContent = (
     <div className="flex justify-between items-center">
-      <FilterModal handleOk={handleFilter} />
+      <FilterModal handleOk={handleFilter} roleSelected={selectedRoles || []} />
       <button
         className="ml-3 text-white bg-green-800 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center mr-2"
         onClick={() => handleExportContent()}

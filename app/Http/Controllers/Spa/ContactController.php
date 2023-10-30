@@ -11,6 +11,7 @@ use App\Models\Contact;
 use App\Models\ContactDownline;
 use App\Models\OrderLead;
 use App\Models\OrderManual;
+use App\Models\Prospect;
 use App\Models\Role;
 use App\Models\Transaction;
 use App\Models\TransactionAgent;
@@ -61,15 +62,19 @@ class ContactController extends Controller
             $contact->where('created_by', $createdBy);
         }
 
-        if (in_array($role, ['adminsales', 'leadsales', 'admin'])) {
+        if (in_array($role, ['adminsales', 'leadsales'])) {
             $contact->where('created_by', $user->id);
         }
 
         if (in_array($role, ['leadcs'])) {
             $contact->orWhereHas('roles', function ($query) {
-                $query->whereIn('role_type', ['mitra', 'member', 'subagent']);
+                $query->whereIn('role_type', ['mitra', 'subagent']);
             });
         }
+
+        $contact->orWhereHas('roles', function ($query) {
+            $query->where('role_type', '!=', 'member');
+        });
 
         $contacts = $contact->orderBy('users.created_at', 'desc')->paginate($request->perpage);
         return response()->json([
@@ -119,10 +124,13 @@ class ContactController extends Controller
         }
         $total_debt = $total_order_lead + $total_order_manual;
 
+        $prospects = Prospect::whereContact($user_id)->get();
+
 
         return response()->json([
             'status' => 'success',
             'data' => $contact,
+            'prospects' => $prospects,
             'order_lead' => [
                 'list' => $list_order,
                 'total_debt' => $total_debt,

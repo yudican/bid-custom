@@ -46,6 +46,7 @@ import {
 } from "./config"
 import ContactAddress from "./ContactAddress"
 import { ReactComponent as DepositoIcon } from "../../Assets/Icons/ri_luggage-deposit-fill.svg"
+import { prospectListColumn } from "../Prospect/config"
 
 const { TabPane } = Tabs
 
@@ -58,6 +59,7 @@ const DetailContact = () => {
   const [transactionHistory, setTransactionHistory] = useState([])
   const [contactDownlines, setContactDownlines] = useState([])
   const [orderLead, setOrderLead] = useState(null)
+  const [prospectData, setProspectData] = useState([])
   const [orderLeadList, setOrderLeadList] = useState([])
   const [caseHistory, setCaseHistory] = useState([])
   const [loading, setLoading] = useState(false)
@@ -67,9 +69,10 @@ const DetailContact = () => {
   const loadDetailContact = () => {
     setLoading(true)
     axios.get(`/api/contact/detail/${params.user_id}`).then((res) => {
-      const { data, order_lead } = res.data
+      const { data, order_lead, prospects } = res.data
       setActiveTabKey("1")
       setOrderLead(order_lead)
+      setProspectData(prospects || [])
       const orderList =
         order_lead &&
         order_lead.list.map((item) => {
@@ -287,7 +290,6 @@ const DetailContact = () => {
           <div className="row">
             <RenderIf isTrue={true}>
               <div className="row w-full pl-3">
-                
                 <div className="col-md-4">
                   <div className="card bg-gradient-to-r from-white via-white to-[#1595001F]/20">
                     <div className="p-3 border-b-[1px] border-b-[#159500]/50 flex justify-between">
@@ -648,8 +650,19 @@ const DetailContact = () => {
             tableLayout={"auto"}
           />
         </TabPane>
+        <TabPane tab="History Prospect" key="4">
+          <Table
+            dataSource={prospectData}
+            columns={prospectListColumn}
+            // loading={loading}
+            pagination={false}
+            rowKey="id"
+            scroll={{ x: "max-content" }}
+            tableLayout={"auto"}
+          />
+        </TabPane>
         {show && (
-          <TabPane tab="Setting Profile" key="6">
+          <TabPane tab="Setting Profile" key="5">
             <Form
               form={form}
               name="basic"
