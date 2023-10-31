@@ -133,21 +133,18 @@ const FilterModal = ({ handleOk }) => {
               </Select.Option>
             </Select>
           </div>
-          
         </div>
 
         <div className="mb-2">
-            <label htmlFor="">Create Date</label>
-            <RangePicker
-              className="w-full"
-              format={"YYYY-MM-DD"}
-              onChange={(e, dateString) =>
-                handleChange(dateString, "created_at")
-              }
-            />
+          <label htmlFor="">Create Date</label>
+          <RangePicker
+            className="w-full"
+            format={"YYYY-MM-DD"}
+            onChange={(e, dateString) => handleChange(dateString, "created_at")}
+          />
         </div>
 
-        <div className="row mb-2">
+        {/* <div className="row mb-2">
           <div className="col-md-6">
             <label htmlFor="">Range Deposito</label>
             <Input placeholder="Min" />
@@ -167,8 +164,7 @@ const FilterModal = ({ handleOk }) => {
             <label htmlFor="">&nbsp;</label>
             <Input placeholder="Max" />
           </div>
-        </div>
-     
+        </div> */}
       </Modal>
     </div>
   )

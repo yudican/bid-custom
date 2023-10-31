@@ -74,9 +74,9 @@ class ContactController extends Controller
             });
         }
 
-        $contact->orWhereHas('roles', function ($query) {
-            $query->where('role_type', '!=', 'member');
-        });
+        // $contact->orWhereHas('roles', function ($query) {
+        //     $query->where('role_type', '!=', 'member');
+        // });
 
         $contacts = $contact->orderBy('users.created_at', 'desc')->paginate($request->perpage);
         return response()->json([
