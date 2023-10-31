@@ -482,7 +482,7 @@ class ProspectController extends Controller
 
             $data = [
                 // 'contact' => $request->contact,
-                'status' => $request->status,
+                // 'status' => $request->status,
                 'tag' => $request->tag,
             ];
 

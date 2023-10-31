@@ -62,8 +62,10 @@ class ContactController extends Controller
             $contact->where('created_by', $createdBy);
         }
 
-        if (in_array($role, ['adminsales', 'leadsales'])) {
-            $contact->where('created_by', $user->id);
+        if (in_array($role, ['adminsales', 'leadsales', 'cs'])) {
+            $contact->where('created_by', $user->id)->orWheraHas('prospects', function ($query) use ($user) {
+                return $query->where('async_to', $user->id)->orWhere('created_by', $user->id);
+            });
         }
 
         if (in_array($role, ['leadcs'])) {

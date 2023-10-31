@@ -326,6 +326,16 @@ class User extends Authenticatable
         return $this->hasMany(ContactDownline::class, 'user_id');
     }
 
+    /**
+     * Get all of the prospects for the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function prospects()
+    {
+        return $this->hasMany(Prospect::class, 'contact');
+    }
+
     public function getCompanyNameAttribute()
     {
         $company = Company::where('user_id', $this->id)->first();
