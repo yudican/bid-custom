@@ -1666,7 +1666,7 @@ if (!function_exists('sendNotifTelegram')) {
   function sendNotifTelegram($message = null, $chatId = null)
   {
     try {
-      $telegram = new Api('6361554669:AAFQmHeVDWOJeiOmTgkHfFqujaIitOUR04I');
+      $telegram = new Api('6762912533:AAEfGBz90ytaVvh9Va2ZnWESI1qwa3vZHvE');
 
       // Kirim pesan ke ID chat tertentu
 
