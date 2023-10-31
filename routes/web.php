@@ -146,7 +146,10 @@ use App\Http\Livewire\Product\ProductSKUConvert;
 use App\Http\Livewire\Product\ProductSkuImport;
 use App\Http\Livewire\Shipping\ShippingVoucher;
 use App\Http\Livewire\Transaction\TransactionReportController;
+use App\Models\Prospect;
+use App\Models\ProspectActivity;
 use App\Models\SalesChannel;
+use App\Models\User as ModelsUser;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 
@@ -195,7 +198,7 @@ Route::group(['middleware' => ['auth:sanctum', 'user.authorization']], function 
     Route::get('prospect', [ProspectController::class, 'home'])->name('spa.prospect.index');
     Route::get('prospect/detail/{prospect_id}', [ProspectController::class, 'home'])->name('spa.prospect.detail');
     Route::get('prospect/form/{prospect_id?}', [ProspectController::class, 'home'])->name('spa.prospect.form');
-   
+
     // order online
     Route::get('order-online', [ProspectController::class, 'home'])->name('spa.order-online.index');
     Route::get('order-online/detail/{order_online_id}', [ProspectController::class, 'home'])->name('spa.order-online.detail');
@@ -673,4 +676,21 @@ Route::group(['prefix' => 'webhook'], function () {
 
 Route::get('/logout', function () {
     return redirect('/login/dashboard');
+});
+
+
+Route::get('/delete-member', function () {
+    $users = ModelsUser::whereHas('roles', function ($query) {
+        return $query->where('role_type', 'member');
+    })->get();
+
+    foreach ($users as $key => $user) {
+        $prospect = Prospect::where('contact', $user->id)->orWhere('async_to', $user->id)->orWhere('created_by', $user->id)->first();
+        if ($prospect) {
+            ProspectActivity::where('prospect_id', $prospect->id)->delete();
+            $prospect->delete();
+        }
+    }
+
+    return  response()->json([]);
 });
