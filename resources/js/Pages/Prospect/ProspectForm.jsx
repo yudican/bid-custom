@@ -62,8 +62,6 @@ const ProspectForm = () => {
             ),
           }
 
-          console.log(forms, "forms")
-
           form.setFieldsValue(forms)
         } else {
           if (seletedContact) {
@@ -265,7 +263,10 @@ const ProspectForm = () => {
                   },
                 ]}
               >
-                <Select placeholder="Select Tag">
+                <Select
+                  placeholder="Select Tag"
+                  disabled={detail?.tag == "hot"}
+                >
                   {[
                     { name: "🔥 Hot", value: "hot", borderColor: "#CB3A31" },
                     { name: "❄️ Cold", value: "cold", borderColor: "#004AA7" },
@@ -281,6 +282,9 @@ const ProspectForm = () => {
                 <Input disabled />
               </Form.Item>
               <Form.Item label="Created By" name="created_by_name">
+                <Input disabled />
+              </Form.Item>
+              <Form.Item label="Status" name="status">
                 <Input disabled />
               </Form.Item>
             </div>

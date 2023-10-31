@@ -39,7 +39,7 @@ const ModalTautanTelegram = ({ checked, data, onDisabled }) => {
         // okText={"Tautkan Sekarang"}
         onCancel={() => setIsModalOpen(false)}
         // onOk={() => {
-        //   window.open("https://t.me/momsy_bot")
+        //   window.open("https://t.me/nabawi_cs_bot")
         // }}
       >
         <div ref={modalRef}>
@@ -76,7 +76,7 @@ const ModalTautanTelegram = ({ checked, data, onDisabled }) => {
               </span>{" "}
               dibagian bawah atau{" "}
               <a
-                href="https://t.me/momsy_bot"
+                href="https://t.me/nabawi_cs_bot"
                 target="_blank"
                 className="text-primary"
               >
@@ -136,7 +136,7 @@ const ModalTautanTelegram = ({ checked, data, onDisabled }) => {
             >
               <Button
                 onClick={() => {
-                  window.open("https://t.me/momsy_bot")
+                  window.open("https://t.me/nabawi_cs_bot")
                 }}
                 type="primary"
               >
