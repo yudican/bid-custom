@@ -689,8 +689,8 @@ Route::get('/delete-member', function () {
         if ($prospect) {
             ProspectActivity::where('prospect_id', $prospect->id)->delete();
             $prospect->delete();
-            $user->delete();
         }
+        $user->delete();
     }
 
     return  response()->json([]);
