@@ -52,14 +52,15 @@ const ContactList = () => {
         const newData = data.map((contact) => {
           return {
             key: contact.id,
+            uid: contact.uid,
             name: contact.name,
             telepon: contact.telepon,
             email: contact.email,
             role: contact?.role.role_name,
             created_by: contact?.created_by_name,
             created_on: moment(contact.created_at).format("DD-MM-YYYY"),
-            deposit: formatNumber(contact?.deposit),
-            total_debt: formatNumber(contact?.amount_detail.total_debt),
+            total_activity: contact?.total_activity || 0,
+            total_prospect: contact?.total_prospect || 0,
           }
         })
         setSelectedRoles(data.map((item) => item.role.role_type))

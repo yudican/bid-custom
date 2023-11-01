@@ -86,7 +86,9 @@ class User extends Authenticatable
         'company_name',
         'account_id',
         'sales_channels',
-        'amount_detail'
+        'amount_detail',
+        'total_activity',
+        'total_prospect'
     ];
 
     /**
@@ -364,31 +366,50 @@ class User extends Authenticatable
 
     public function getAmountDetailAttribute()
     {
-        $total_order_lead = 0;
-        $total_order_manual = 0;
-        $total_invoice = 0;
-        $total_amount = 0;
-        $debt_order_leads = OrderLead::whereContact($this->id)->where('status', 2)->get();
-        foreach ($debt_order_leads as $key => $value) {
-            $total_invoice += 1;
-            $total_amount += $value->amount_billing_approved;
-            $total_order_lead += $value->amount;
-        }
+        //     $total_order_lead = 0;
+        //     $total_order_manual = 0;
+        //     $total_invoice = 0;
+        //     $total_amount = 0;
+        //     $debt_order_leads = OrderLead::whereContact($this->id)->where('status', 2)->get();
+        //     foreach ($debt_order_leads as $key => $value) {
+        //         $total_invoice += 1;
+        //         $total_amount += $value->amount_billing_approved;
+        //         $total_order_lead += $value->amount;
+        //     }
 
-        $debt_order_manuals = OrderManual::whereContact($this->id)->where('status', 2)->get();
-        foreach ($debt_order_manuals as $key => $value) {
-            $total_invoice += 1;
-            $total_amount += $value->amount_billing_approved;
-            $total_order_manual += $value->amount;
-        }
-        $total_debt = $total_order_lead + $total_order_manual;
+        //     $debt_order_manuals = OrderManual::whereContact($this->id)->where('status', 2)->get();
+        //     foreach ($debt_order_manuals as $key => $value) {
+        //         $total_invoice += 1;
+        //         $total_amount += $value->amount_billing_approved;
+        //         $total_order_manual += $value->amount;
+        //     }
+        //     $total_debt = $total_order_lead + $total_order_manual;
 
         return [
-            'total_order_lead' => $total_order_lead,
-            'total_order_manual' => $total_order_manual,
-            'total_invoice' => $total_invoice,
-            'total_amount' => $total_amount,
-            'total_debt' => $total_debt,
+            'total_order_lead' => 0,
+            'total_order_manual' => 0,
+            'total_invoice' => 0,
+            'total_amount' => 0,
+            'total_debt' => 0,
         ];
+    }
+
+    public function getTotalActivityAttribute()
+    {
+        $prospects = Prospect::withCount('activities')->where('contact', $this->id)->get();
+
+        $total = 0;
+        foreach ($prospects as $key => $prospect) {
+            $total += $prospect->activities_count;
+        }
+        return $total ?? 0;
+    }
+
+    public function getTotalProspectAttribute()
+    {
+        $prospect_count = Prospect::where('contact', $this->id)->count();
+
+
+        return  $prospect_count ?? 0;
     }
 }

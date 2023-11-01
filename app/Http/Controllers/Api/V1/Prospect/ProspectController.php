@@ -480,11 +480,16 @@ class ProspectController extends Controller
         try {
             DB::beginTransaction();
 
+            $status = $request->status;
+
             $data = [
                 // 'contact' => $request->contact,
-                // 'status' => $request->status,
                 'tag' => $request->tag,
             ];
+
+            if ($status == 'hot') {
+                $data['status'] = 'closed';
+            }
 
             $prospect->update($data);
 

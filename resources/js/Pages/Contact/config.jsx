@@ -48,6 +48,11 @@ const contactListColumn = [
     render: (text, record, index) => index + 1,
   },
   {
+    title: "Customer Code",
+    dataIndex: "uid",
+    key: "uid",
+  },
+  {
     title: "Name",
     dataIndex: "name",
     key: "name",
@@ -58,10 +63,10 @@ const contactListColumn = [
     key: "telepon",
     render: (text) => {
       if (!text) {
-        return '-'
+        return "-"
       } else {
         var onlyno = text.substring(12, 2)
-        return '+62'+onlyno
+        return "+62" + onlyno
       }
     },
   },
@@ -86,14 +91,14 @@ const contactListColumn = [
     key: "created_on",
   },
   {
-    title: "Deposito (Rp)",
-    dataIndex: "deposit",
-    key: "deposit",
+    title: "Total Activity",
+    dataIndex: "total_activity",
+    key: "total_activity",
   },
   {
-    title: "Komisi (Rp)",
-    dataIndex: "total_debt",
-    key: "total_debt",
+    title: "Total Prospect",
+    dataIndex: "total_prospect",
+    key: "total_prospect",
   },
   {
     title: "Action",
