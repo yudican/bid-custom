@@ -26,6 +26,7 @@ const ProspectForm = () => {
   const [seletedAsync, setSeletedAsync] = useState(null)
   const [formList, setFormList] = useState([])
   const [formListData, setFormListData] = useState([])
+  const [contactIsLoyal, setContactIsLoyal] = useState(false)
 
   // local storage
   const user = getItem("user_data")
@@ -44,6 +45,7 @@ const ProspectForm = () => {
           setSeletedcontact({
             label: data?.contact_name,
             value: data?.contact_user?.id,
+            isLoyal: data?.contact_user?.isLoyal,
           })
           setSeletedAsync({
             label: data?.async_contact_name,
@@ -68,6 +70,7 @@ const ProspectForm = () => {
             form.setFieldValue("contact", {
               label: seletedContact?.label,
               value: seletedContact?.value,
+              isLoyal: data?.contact_user?.isLoyal,
             })
           }
           if (seletedAsync) {
@@ -88,7 +91,11 @@ const ProspectForm = () => {
   const handleGetContact = () => {
     searchContact(null).then((results) => {
       const newResult = results.map((result) => {
-        return { label: result.nama, value: result.id }
+        return {
+          label: result.nama,
+          value: result.id,
+          isLoyal: result?.isLoyal,
+        }
       })
       setContactList(newResult)
     })
@@ -122,7 +129,11 @@ const ProspectForm = () => {
   const handleSearchContact = async (e) => {
     return searchContact(e).then((results) => {
       const newResult = results.map((result) => {
-        return { label: result.nama, value: result.id }
+        return {
+          label: result.nama,
+          value: result.id,
+          isLoyal: result?.isLoyal,
+        }
       })
 
       return newResult
@@ -221,8 +232,10 @@ const ProspectForm = () => {
                   className="w-full"
                   onChange={(e) => {
                     setSeletedcontact(e)
+                    setContactIsLoyal(e?.isLoyal)
                     form.setFieldValue("role", e?.label?.split(" - ")[1])
                   }}
+                  isVerified={contactIsLoyal}
                 />
               </Form.Item>
               {inArray(role, ["admin", "superadmin"]) && (

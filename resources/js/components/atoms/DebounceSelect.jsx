@@ -1,44 +1,46 @@
-import React from "react";
-import debounce from "lodash.debounce";
-import { Empty, Select, Spin } from "antd";
+import React from "react"
+import debounce from "lodash.debounce"
+import { Empty, Select, Spin } from "antd"
+import { VerifiedOutlined } from "@ant-design/icons"
 
 export default function DebounceSelect({
   fetchOptions,
   debounceTimeout = 800,
   defaultOptions = [],
   value = null,
+  isVerified = false,
   ...props
 }) {
-  const [fetching, setFetching] = React.useState(false);
-  const [options, setOptions] = React.useState([]);
-  const fetchRef = React.useRef(0);
+  const [fetching, setFetching] = React.useState(false)
+  const [options, setOptions] = React.useState([])
+  const fetchRef = React.useRef(0)
   const debounceFetcher = React.useMemo(() => {
     const loadOptions = (value) => {
-      fetchRef.current += 1;
-      const fetchId = fetchRef.current;
-      setOptions([]);
+      fetchRef.current += 1
+      const fetchId = fetchRef.current
+      setOptions([])
       if (value) {
-        setFetching(true);
+        setFetching(true)
         fetchOptions(value)
           .then((newOptions) => {
             if (fetchId !== fetchRef.current) {
               // for fetch callback order
-              return;
+              return
             }
 
-            setOptions(newOptions);
-            setFetching(false);
+            setOptions(newOptions)
+            setFetching(false)
           })
           .finally(() => {
-            setFetching(false);
-          });
+            setFetching(false)
+          })
       }
-    };
+    }
 
-    return debounce(loadOptions, debounceTimeout);
-  }, [fetchOptions, debounceTimeout]);
+    return debounce(loadOptions, debounceTimeout)
+  }, [fetchOptions, debounceTimeout])
 
-  const newOption = options.length > 0 ? options : defaultOptions;
+  const newOption = options.length > 0 ? options : defaultOptions
   return (
     <Select
       {...props}
@@ -46,8 +48,9 @@ export default function DebounceSelect({
       filterOption={false}
       onSearch={debounceFetcher}
       notFoundContent={fetching ? <Spin size="small" /> : <Empty />}
+      suffixIcon={isVerified && <VerifiedOutlined color="green" />}
       options={newOption}
       value={value}
     />
-  );
+  )
 } // Usage of DebounceSelect
