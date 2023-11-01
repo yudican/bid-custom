@@ -11,7 +11,7 @@ class TelegramBotController extends Controller
 {
     public function handle(Request $request)
     {
-        $telegram = new Api('6361554669:AAFQmHeVDWOJeiOmTgkHfFqujaIitOUR04I');
+        $telegram = new Api('6762912533:AAEfGBz90ytaVvh9Va2ZnWESI1qwa3vZHvE');
 
         try {
             $message = $request->input('message');

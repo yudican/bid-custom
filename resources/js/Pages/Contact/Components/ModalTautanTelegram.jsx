@@ -94,7 +94,7 @@ const ModalTautanTelegram = ({ checked, data, onDisabled }) => {
             <li className="mb-4">
               <p>
                 {" "}
-                3. Selanjutnya Masukkan Customer Code dan Kirim Di Dalam Chat{" "}
+                3. Selanjutnya Masukkan dan Kirim Kode Berikut Di Dalam Chat{" "}
                 <span className="text-primary">{data?.uid}</span>
               </p>
               <img
@@ -109,7 +109,7 @@ const ModalTautanTelegram = ({ checked, data, onDisabled }) => {
                 balasan bahwa penyiapan akun notifikasi telah selesai.
               </p>
               <img
-                src="https://i.ibb.co/vZVptq2/Jepretan-Layar-2023-11-01-pukul-11-24-23.png"
+                src="https://i.ibb.co/SRJFSGt/Screenshot-2023-07-04-at-12-21-17.png"
                 alt=""
                 className="h-52 rounded-md mx-auto"
               />
