@@ -85,13 +85,15 @@ class ContactController extends Controller
                 return $contacts->getCollection()->transform(function ($item) {
                     return [
                         'id' => $item['id'],
+                        'uid' => $item['uid'],
                         'name' => $item['name'],
                         'email' => $item['email'],
                         'telepon' => $item['telepon'],
                         'created_by_name' => $item['created_by_name'],
                         'role' => $item['role'],
                         'created_at' => $item['created_at'],
-                        'amount_detail' => $item['amount_detail'],
+                        'total_activity' => $item['total_activity'],
+                        'total_prospect' => $item['total_prospect'],
                     ];
                 });
             }),

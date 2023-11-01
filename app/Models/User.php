@@ -88,7 +88,8 @@ class User extends Authenticatable
         'sales_channels',
         'amount_detail',
         'total_activity',
-        'total_prospect'
+        'total_prospect',
+        'isLoyal'
     ];
 
     /**
@@ -411,5 +412,12 @@ class User extends Authenticatable
 
 
         return  $prospect_count ?? 0;
+    }
+
+    public function getisLoyalAttribute()
+    {
+        $prospect_count = Prospect::where('contact', $this->id)->whereTag('hot')->count();
+
+        return  $prospect_count > 1 ? true : false;
     }
 }
