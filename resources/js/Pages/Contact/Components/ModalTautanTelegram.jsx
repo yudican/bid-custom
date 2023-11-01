@@ -86,7 +86,7 @@ const ModalTautanTelegram = ({ checked, data, onDisabled }) => {
             <li className="mb-4">
               <p>2. Setelah Masuk Ke Chat Kemudian Klik Start</p>
               <img
-                src="https://i.ibb.co/6NhXjWP/Screenshot-2023-07-04-at-11-31-44.png"
+                src="https://i.ibb.co/Pcvh0bN/Jepretan-Layar-2023-11-01-pukul-11-18-50.png"
                 alt=""
                 className="h-52 rounded-md mx-auto"
               />
@@ -94,11 +94,11 @@ const ModalTautanTelegram = ({ checked, data, onDisabled }) => {
             <li className="mb-4">
               <p>
                 {" "}
-                3. Selanjutnya Masukkan dan Kirim Kode Berikut Di Dalam Chat{" "}
+                3. Selanjutnya Masukkan Customer Code dan Kirim Di Dalam Chat{" "}
                 <span className="text-primary">{data?.uid}</span>
               </p>
               <img
-                src="https://i.ibb.co/JrKrMpK/Screenshot-2023-07-04-at-12-18-55.png"
+                src="https://i.ibb.co/vZVptq2/Jepretan-Layar-2023-11-01-pukul-11-24-23.png"
                 alt=""
                 className="h-52 rounded-md mx-auto"
               />
@@ -109,7 +109,7 @@ const ModalTautanTelegram = ({ checked, data, onDisabled }) => {
                 balasan bahwa penyiapan akun notifikasi telah selesai.
               </p>
               <img
-                src="https://i.ibb.co/SRJFSGt/Screenshot-2023-07-04-at-12-21-17.png"
+                src="https://i.ibb.co/vZVptq2/Jepretan-Layar-2023-11-01-pukul-11-24-23.png"
                 alt=""
                 className="h-52 rounded-md mx-auto"
               />

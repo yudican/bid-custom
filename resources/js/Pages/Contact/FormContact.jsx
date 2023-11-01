@@ -261,11 +261,13 @@ const FormContact = () => {
               >
                 <Input placeholder="Ketik No Telepon" />
               </Form.Item>
-              <ModalTautanTelegram
-                checked={isTelegramVerified}
-                data={contact}
-                onDisabled={() => disabledNotification()}
-              />
+              {params?.user_id && (
+                <ModalTautanTelegram
+                  checked={isTelegramVerified}
+                  data={contact}
+                  onDisabled={() => disabledNotification()}
+                />
+              )}
             </div>
             <div className="col-md-6">
               <Form.Item
