@@ -86,7 +86,7 @@ class GeneralController extends Controller
             $isloyal = $item->isLoyal ? '✅' : '';
             return [
                 'id' => $item->id,
-                'nama' => $item->name . ' - ' . $item->role?->role_name . ' ' . $isloyal,
+                'nama' =>  $isloyal . ' ' . $item->name . ' - ' . $item->role?->role_name,
                 'isLoyal' => $item->isLoyal
             ];
         });
