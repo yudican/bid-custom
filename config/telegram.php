@@ -32,9 +32,9 @@ return [
     */
     'bots' => [
         'mybot' => [
-            'token' => env('TELEGRAM_BOT_TOKEN', '6361554669:AAFQmHeVDWOJeiOmTgkHfFqujaIitOUR04I'),
+            'token' => env('TELEGRAM_BOT_TOKEN', '6762912533:AAEfGBz90ytaVvh9Va2ZnWESI1qwa3vZHvE'),
             'certificate_path' => env('TELEGRAM_CERTIFICATE_PATH', 'YOUR-CERTIFICATE-PATH'),
-            'webhook_url' => env('TELEGRAM_WEBHOOK_URL', 'https://dev-momsy.aimi.dev/api/telegram/webhook'),
+            'webhook_url' => env('TELEGRAM_WEBHOOK_URL', 'https://dev.kreasiarunya.com/api/telegram/webhook'),
             'commands' => [
                 //Acme\Project\Commands\MyTelegramBot\BotCommand::class
             ],
