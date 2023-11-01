@@ -83,9 +83,10 @@ class GeneralController extends Controller
         });
 
         $userData = $user_list->limit($request->limit ?? 5)->get()->map(function ($item) {
+            $isloyal = $item->isLoyal ? '✅' : '';
             return [
                 'id' => $item->id,
-                'nama' => $item->name . ' - ' . $item->role?->role_name,
+                'nama' => $item->name . ' - ' . $item->role?->role_name . ' ' . $isloyal,
                 'isLoyal' => $item->isLoyal
             ];
         });
