@@ -66,6 +66,9 @@ module.exports = {
         flimty: "0 2px 4px 0 rgba(0,0,0,0.15)",
       },
       colors: ({ colors }) => ({
+        successColor: "#43936c",
+        neutralColor: "#808080",
+        orangeOrder: "#ff6600",
         orangeButton: "#FE8311",
         movementColor: "#004AA6",
         blueColor: "#008BE1",

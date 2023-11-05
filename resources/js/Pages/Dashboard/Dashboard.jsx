@@ -1,11 +1,26 @@
 import {
+  DotChartOutlined,
   DownOutlined,
+  FileExcelFilled,
+  MoreOutlined,
   ShoppingCartOutlined,
   ShoppingFilled,
   SmileOutlined,
   UserOutlined,
 } from "@ant-design/icons"
-import { Dropdown, Empty, Input, Menu, Select, Space, Table, Tabs } from "antd"
+import {
+  Badge,
+  DatePicker,
+  Dropdown,
+  Empty,
+  Input,
+  Menu,
+  Select,
+  Space,
+  Table,
+  Tabs,
+  Tag,
+} from "antd"
 import axios from "axios"
 import React, { useEffect, useState } from "react"
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar"
@@ -15,6 +30,8 @@ import { StatusCardDashboard } from "../../components/CardReusable"
 import Layout from "../../components/layout"
 import { formatNumber, getItem, inArray } from "../../helpers"
 import { productAndStockColumn, summaryTransactionColumn } from "./config"
+import DebounceSelect from "../../components/atoms/DebounceSelect"
+import { searchContact } from "../CaseManual/service"
 
 const { Search } = Input
 
@@ -74,31 +91,18 @@ const Dashboard = () => {
             label: `Ringkasan Transaksi`,
             key: "1",
             // children: <SummaryTransaction data={data} />,
-            children: (
-              <div className="h-96 flex items-center justify-center">
-                <Empty description={"On Development Progress"} />
-              </div>
-            ),
+            children: <TransactionSummary />,
           },
           {
             label: `Statistik`,
             key: "2",
-            // children: <Statistic data={dataAgent} />,
-            children: (
-              <div className="h-96 flex items-center justify-center">
-                <Empty description={"On Development Progress"} />
-              </div>
-            ),
+            children: <Statistic data={dataAgent} />,
           },
           {
-            label: `Produk & Stok`,
+            label: `Prospect`,
             key: "3",
             // children: <ProductAndStock data={dataLead} />,
-            children: (
-              <div className="h-96 flex items-center justify-center">
-                <Empty description={"On Development Progress"} />
-              </div>
-            ),
+            children: <ProspectDashboard />,
           },
         ]}
       />
@@ -614,6 +618,365 @@ const DashboardContentCase = ({ data }) => {
             }
           />
         </div>
+      </div>
+    </div>
+  )
+}
+
+const StatusTransactionCard = ({ label = "label", value = "null", icon }) => {
+  return (
+    <div className="flex w-full h-28 border rounded-md p-4 shadow-sm">
+      <div className="mt-2 mr-3">{icon}</div>
+      <div>
+        <div className="text-sm">{label}</div>
+        <div className="text-base font-medium text-successColor">{value}</div>
+      </div>
+    </div>
+  )
+}
+
+const TransactionSummary = ({ data }) => {
+  const columns = [
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      render: (text) => <a>{text}</a>,
+    },
+    {
+      title: "Age",
+      dataIndex: "age",
+      key: "age",
+    },
+    {
+      title: "Address",
+      dataIndex: "address",
+      key: "address",
+    },
+    {
+      title: "Tags",
+      key: "tags",
+      dataIndex: "tags",
+      render: (_, { tags }) => (
+        <>
+          {tags.map((tag) => {
+            let color = tag.length > 5 ? "geekblue" : "green"
+            if (tag === "loser") {
+              color = "volcano"
+            }
+            return (
+              <Tag color={color} key={tag}>
+                {tag.toUpperCase()}
+              </Tag>
+            )
+          })}
+        </>
+      ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, record) => (
+        <Space size="middle">
+          <a>Invite {record.name}</a>
+          <a>Delete</a>
+        </Space>
+      ),
+    },
+  ]
+  const menu = (
+    <Menu>
+      <Menu.Item>testing</Menu.Item>
+      <Menu.Item>
+        <button
+        // onClick={() => handleExportContent()}
+        >
+          <span className="ml-2">testing2</span>
+        </button>
+      </Menu.Item>
+    </Menu>
+  )
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 gap-x-5 mb-10">
+        <div className="grid grid-cols-2 gap-5">
+          <StatusTransactionCard
+            icon={<ShoppingFilled style={{ color: "#43936C" }} />}
+            label="Pesanan Baru"
+            value="100 Pesanan"
+          />
+          <StatusTransactionCard
+            icon={<ShoppingFilled style={{ color: "#43936C" }} />}
+            label="Pesanan Diproses"
+            value="100 Pesanan"
+          />
+          <StatusTransactionCard
+            icon={<ShoppingFilled style={{ color: "#43936C" }} />}
+            label="Jumlah Pesanan Berhasil"
+            value={formatNumber(2500000, "Rp. ")}
+          />
+          <StatusTransactionCard
+            icon={<ShoppingFilled style={{ color: "#43936C" }} />}
+            label="Jumlah Pesanan Diproses"
+            value={formatNumber(1000000, "Rp. ")}
+          />
+        </div>
+
+        <div className="border rounded-md shadow-sm px-6 h-full">
+          <div className="flex flex-row items-center justify-between">
+            <div className="leading-none">
+              <h1 className="text-[22px] font-medium leading-none">
+                Statistik Metode Pembayaran
+              </h1>
+              <span className="text-xs text-[#C4C4C4] leading-none">
+                Informasi harian tentang penjualan berdasarkan status
+              </span>
+            </div>
+            <div>
+              <MoreOutlined rotate={90} className="text-2xl" />
+            </div>
+          </div>
+
+          <div className="mt-4 ml-3 flex flex-row justify-around items-center">
+            <div>
+              <CircularProgressbar
+                value={data?.transaction_active || 0}
+                text={`${data?.transaction_active || 0}`}
+                styles={buildStyles({
+                  strokeLinecap: "round",
+                  trailColor: "#DFEEDB",
+                  pathColor: "#A6D997",
+                  textColor: "#A6D997",
+                })}
+                className="w-28 h-28 text-2xl font-light mb-4"
+              />
+              <h1 className="text-xs font-semibold text-center">
+                Active Transaction
+              </h1>
+            </div>
+            <div>
+              <CircularProgressbar
+                value={data?.waiting_payment || 0}
+                text={`${data?.waiting_payment || 0}`}
+                styles={buildStyles({
+                  strokeLinecap: "round",
+                  trailColor: "#FFD8D6",
+                  pathColor: "#FE3A30",
+                  textColor: "#FE3A30",
+                })}
+                className="w-28 h-28 text-2xl font-light mb-4"
+              />
+              <h1 className="text-xs font-semibold text-center">
+                Waiting Payment
+              </h1>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex justify-between items-center py-4">
+          <div className="text-base font-medium">Transaksi Terbaru</div>
+          <Dropdown overlay={menu}>
+            <button
+              className="text-black font-medium rounded-lg text-sm text-center inline-flex items-center"
+              onClick={(e) => e.preventDefault()}
+            >
+              <span className="mr-2">Last 7 days</span>
+              <DownOutlined />
+            </button>
+          </Dropdown>
+        </div>
+        <Table rowSelection columns={columns} />
+      </div>
+    </div>
+  )
+}
+
+const ProspectDashboard = ({ data }) => {
+  const [contactList, setContactList] = useState([])
+  const [totalProspect, setTotalProspect] = useState(0)
+  const [totalActivity, setTotalActivity] = useState(0)
+
+  const handleGetContact = () => {
+    searchContact(null).then((results) => {
+      const newResult = results.map((result) => {
+        return { label: result.nama, value: result.id }
+      })
+      setContactList(newResult)
+    })
+  }
+
+  const handleSearchContact = async (e) => {
+    return searchContact(e).then((results) => {
+      const newResult = results.map((result) => {
+        return { label: result.nama, value: result.id }
+      })
+
+      return newResult
+    })
+  }
+
+  const menu = (
+    <Menu>
+      <Menu.Item>testing</Menu.Item>
+      <Menu.Item>
+        <button
+        // onClick={() => handleExportContent()}
+        >
+          <span className="ml-2">testing2</span>
+        </button>
+      </Menu.Item>
+    </Menu>
+  )
+
+  const handleGetProspectData = async () => {
+    try {
+      const response = await fetch("/api/prospect/list")
+      const data = await response.json()
+      const totalProspectCount = data.data.data.length
+      setTotalProspect(totalProspectCount)
+    } catch (error) {
+      console.error("Error fetching prospect data:", error)
+    }
+  }
+
+  const handleGetActivityData = async () => {
+    try {
+      const response = await fetch("/api/activity/list")
+      const data = await response.json()
+      const totalActivityCount = data.data.length
+      setTotalActivity(totalActivityCount)
+    } catch (error) {
+      console.error("Error fetching prospect data:", error)
+    }
+  }
+
+  useEffect(() => {
+    handleGetProspectData()
+    handleGetActivityData()
+    handleGetContact()
+  }, [])
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center">
+          <div className="mr-2">Filter by Contact CS</div>
+          <DebounceSelect
+            showSearch
+            placeholder="Choose Contact"
+            fetchOptions={handleSearchContact}
+            filterOption={false}
+            defaultOptions={contactList}
+            className="w-"
+            // onChange={(val) => {
+            //   loadAddress(val?.value)
+            // }}
+          />
+        </div>
+
+        <div className="flex items-center">
+          <div className="mr-2">Filter</div>
+
+          <DatePicker.RangePicker className="w-full" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-10 gap-5">
+        <div className="grid col-span-2 gap-4">
+          <div className="h-28 w-full rounded-md p-2 border shadow-sm">
+            <span className="font-medium text-sm">Total Prospect</span>
+            <br />
+            <div className="border-t my-2" />
+            <br />
+            <h1 className="text-3xl font-medium text-blueColor">
+              {totalProspect}
+            </h1>
+          </div>
+
+          <div className="h-28 w-full rounded-md p-2 border shadow-sm">
+            <span className="font-medium text-sm">Total Activity</span>
+            <br />
+            <div className="border-t my-2" />
+            <br />
+            <h1 className="text-3xl font-medium text-orangeOrder">
+              {totalActivity}
+            </h1>
+          </div>
+        </div>
+
+        <div className="col-span-4 h-full w-full rounded-md p-2 border shadow-sm">
+          <span className="font-medium text-sm">Prospect Status</span>
+          <br />
+          <div className="border-t my-2" />
+          <div className="mt-4">
+            {[
+              { label: "New", count: 100 },
+              { label: "On Process", count: 1000 },
+              { label: "Closed", count: 500 },
+            ].map((value, index) => {
+              return (
+                <div
+                  className="flex justify-between items-center border-b mb-2.5 pb-2.5"
+                  key={index}
+                >
+                  {value.label}
+                  <Badge
+                    style={{ color: "black" }}
+                    color="#E5F9FF"
+                    count={value.count}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="col-span-4 h-full w-full rounded-md p-2 border shadow-sm">
+          <span className="font-medium text-sm">Prospect Tag</span>
+          <br />
+          <div className="border-t my-2" />
+
+          <div className="mt-4">
+            {[
+              { label: "Cold", count: 100 },
+              { label: "Warm", count: 1000 },
+              { label: "Hot", count: 500 },
+            ].map((value, index) => {
+              return (
+                <div
+                  className="flex justify-between items-center border-b mb-2.5 pb-2.5"
+                  key={index}
+                >
+                  {value.label}
+                  <Badge
+                    style={{ color: "black" }}
+                    color="#E5F9FF"
+                    count={value.count}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex justify-between items-center py-4">
+          <div className="text-base font-medium">Transaksi Terbaru</div>
+          <Dropdown overlay={menu}>
+            <button
+              className="text-black font-medium rounded-lg text-sm text-center inline-flex items-center"
+              onClick={(e) => e.preventDefault()}
+            >
+              <span className="mr-2">Last 7 days</span>
+              <DownOutlined />
+            </button>
+          </Dropdown>
+        </div>
+        <Table rowSelection />
       </div>
     </div>
   )

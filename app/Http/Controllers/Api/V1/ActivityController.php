@@ -15,7 +15,12 @@ class ActivityController extends Controller
 {
     public function index()
     {
-        $activities = Activity::where('created_by', auth()->user()->id)->get();
+        $user = auth()->user();
+        if (in_array($user->role->role_type, ['superadmin', 'admin', 'adminsales'])) {
+            $activities = Activity::all();
+        } else {
+            $activities = Activity::where('created_by', auth()->user()->id)->get();
+        }
 
         return response()->json([
             'message' => 'List activity',

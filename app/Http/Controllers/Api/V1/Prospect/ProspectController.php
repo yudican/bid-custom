@@ -559,16 +559,29 @@ class ProspectController extends Controller
         return $file;
     }
 
-    public function prospectTags()
+    public function prospectTags(Request $request)
     {
         $user = auth()->user();
         if (in_array($user->role->role_type, ['superadmin', 'admin', 'adminsales'])) {
-            $data = [
-                ['name' => 'All', 'tag' => 'all', 'count' => Prospect::count()],
-                ['name' => '🔥 Hot', 'tag' => 'hot', 'count' => Prospect::where('tag', 'hot')->count()],
-                ['name' => '❄️ Cold', 'tag' => 'cold', 'count' => Prospect::where('tag', 'cold')->count()],
-                ['name' => '🌤 Warm', 'tag' => 'warm', 'count' => Prospect::where('tag', 'warm')->count()],
-            ];
+            if ($request->query('startDate') && $request->query('endDate') && $request->query('contact')) {
+                $startDate = $request->query('startDate');
+                $endDate = $request->query('endDate');
+                $contact = $request->query('contact');
+
+                $data = [
+                    ['name' => 'All', 'tag' => 'all', 'count' => Prospect::where('contact', $contact)->whereBetween('created_at', [$startDate, $endDate])->count()],
+                    ['name' => '🔥 Hot', 'tag' => 'hot', 'count' => Prospect::where('contact', $contact)->whereBetween('created_at', [$startDate, $endDate])->where('tag', 'hot')->count()],
+                    ['name' => '❄️ Cold', 'tag' => 'cold', 'count' => Prospect::where('contact', $contact)->whereBetween('created_at', [$startDate, $endDate])->where('tag', 'cold')->count()],
+                    ['name' => '🌤 Warm', 'tag' => 'warm', 'count' => Prospect::where('contact', $contact)->whereBetween('created_at', [$startDate, $endDate])->where('tag', 'warm')->count()],
+                ];
+            } else {
+                $data = [
+                    ['name' => 'All', 'tag' => 'all', 'count' => Prospect::count()],
+                    ['name' => '🔥 Hot', 'tag' => 'hot', 'count' => Prospect::where('tag', 'hot')->count()],
+                    ['name' => '❄️ Cold', 'tag' => 'cold', 'count' => Prospect::where('tag', 'cold')->count()],
+                    ['name' => '🌤 Warm', 'tag' => 'warm', 'count' => Prospect::where('tag', 'warm')->count()],
+                ];
+            }
 
             return response()->json([
                 'error' => false,
@@ -591,14 +604,47 @@ class ProspectController extends Controller
         }
     }
 
-
-    public function prospectStatus()
+    public function prospectStatus(request $request)
     {
+        $user = auth()->user();
+
+        if (in_array($user->role->role_type, ['superadmin', 'admin', 'adminsales'])) {
+            if ($request->query('startDate') && $request->query('endDate') && $request->query('contact')) {
+                $startDate = $request->query('startDate');
+                $endDate = $request->query('endDate');
+                $contact = $request->query('contact');
+
+                $count_all = Prospect::where('contact', $contact)->whereBetween('created_at', [$startDate, $endDate])->count();
+                $count_new = Prospect::where('contact', $contact)->where('status', 'new')->whereBetween('created_at', [$startDate, $endDate])->count();
+                $count_progress = Prospect::where('contact', $contact)->where('status', 'onprogress')->whereBetween('created_at', [$startDate, $endDate])->count();
+                $count_closed = Prospect::where('contact', $contact)->where('status', 'closed')->whereBetween('created_at', [$startDate, $endDate])->count();
+            } else {
+                $count_all = Prospect::get()->count();
+                $count_new = Prospect::where('status', 'new')->count();
+                $count_progress = Prospect::where('status', 'onprogress')->count();
+                $count_closed = Prospect::where('status', 'closed')->count();
+            }
+        } else {
+            if ($request->query('startDate') && $request->query('endDate')) {
+                $startDate = $request->query('startDate');
+                $endDate = $request->query('endDate');
+
+                $count_all = Prospect::where('created_by', auth()->user()->id)->whereBetween('created_at', [$startDate, $endDate])->count();
+                $count_new = Prospect::where('created_by', auth()->user()->id)->where('status', 'new')->whereBetween('created_at', [$startDate, $endDate])->count();
+                $count_progress = Prospect::where('created_by', auth()->user()->id)->where('status', 'onprogress')->whereBetween('created_at', [$startDate, $endDate])->count();
+                $count_closed = Prospect::where('created_by', auth()->user()->id)->where('status', 'closed')->whereBetween('created_at', [$startDate, $endDate])->count();
+            } else {
+                $count_all = Prospect::where('created_by', auth()->user()->id)->count();
+                $count_new = Prospect::where('created_by', auth()->user()->id)->where('status', 'new')->count();
+                $count_progress = Prospect::where('created_by', auth()->user()->id)->where('status', 'onprogress')->count();
+                $count_closed = Prospect::where('created_by', auth()->user()->id)->where('status', 'closed')->count();
+            }
+        }
         $data = [
-            ['name' => 'All', 'status' => 'all', 'count' => Prospect::where('created_by', auth()->user()->id)->count()],
-            ['name' => 'New', 'status' => 'new', 'count' => Prospect::where('created_by', auth()->user()->id)->where('status', 'new')->count()],
-            ['name' => 'On Progress', 'status' => 'onprogress', 'count' => Prospect::where('created_by', auth()->user()->id)->where('status', 'onprogress')->count()],
-            ['name' => 'Closed', 'status' => 'closed', 'count' => Prospect::where('created_by', auth()->user()->id)->where('status', 'closed')->count()],
+            ['name' => 'All', 'status' => 'all', 'count' => $count_all],
+            ['name' => 'New', 'status' => 'new', 'count' => $count_new],
+            ['name' => 'On Progress', 'status' => 'onprogress', 'count' => $count_progress],
+            ['name' => 'Closed', 'status' => 'closed', 'count' => $count_closed],
         ];
 
         return response()->json([
